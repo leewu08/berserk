@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lichess Style Chessboard</title>
+
+  <!-- Chessboard.js CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chessboardjs@1.0.0/www/css/chessboard-1.0.0.min.css">
+
+  <!-- Chess.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    #board {
+      margin: 0 auto;
+      width: 400px;
+      height: 400px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Lichess Style Chessboard</h1>
+  <div id="board"></div>
+
+  <script>
+    // Chess.js 인스턴스를 생성하여 게임 상태를 관리합니다.
+    var game = new Chess();
+
+    // Chessboard.js로 보드를 표시합니다.
+    var board = ChessBoard('#board', {
+      draggable: true,
+      dropOffBoard: 'trash',
+      sparePieces: true,
+      onDrop: handleMove
+    });
+
+    // 체스판에서 수를 두면 게임 상태를 업데이트하는 함수
+    function handleMove(source, target) {
+      var move = game.move({
+        from: source,
+        to: target,
+        promotion: 'q' // 기본적으로 퀸으로 승격
+      });
+
+      renderMoveHistory(game.history());
+      renderBoard(game.board());
+      if (game.game_over()) {
+        alert("게임 종료");
+      }
+    }
+
+    // 게임 역사 출력
+    function renderMoveHistory(moves) {
+      console.log("Moves: " + moves.join(' '));
+    }
+
+    // 보드 상태 렌더링
+    function renderBoard(board) {
+      var boardElement = $('#board');
+      var squares = boardElement.find('.square');
+      squares.each(function(index, square) {
+        var squareElem = $(square);
+        var piece = board[Math.floor(index / 8)][index % 8];
+
+        if (piece) {
+          squareElem.html('<img src="https://www.chess.com/chess-themes/pieces/neo/150/' + piece.type + piece.color[0] + '.png">');
+        } else {
+          squareElem.html('');
+        }
+      });
+    }
+
+    // 게임 초기화
+    function initGame() {
+      game.reset();
+      board.start();
+    }
+
+    // 페이지 로드 시 게임 시작
+    $(document).ready(function() {
+      initGame();
+    });
+  </script>
+
+</body>
+</html>
