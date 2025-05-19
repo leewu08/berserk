@@ -5,9 +5,9 @@ import time
 
 app = Flask(__name__)
 
-TOKEN = "lip_yyCrSqcVpQYkD6oLP9A3"  # 본인의 Lichess API Token 사용
+TOKEN = "lip_fbGgHXuGvdCE3i3ESA4O"
 
-# Jinja2 필터: Unix timestamp → 날짜 문자열
+# Jinja2 필터 등록: timestamp를 읽기 쉬운 날짜로
 def timestamp_to_date(timestamp):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp / 1000))
 app.jinja_env.filters['timestamp_to_date'] = timestamp_to_date
@@ -18,28 +18,32 @@ def index():
 
 @app.route("/player", methods=["POST"])
 def player():
-    username = request.form["username"]
-    headers = {"Authorization": f"Bearer {TOKEN}"}
+    username = request.form.get("username")
+    max_games = int(request.form.get("max_games", 20))  # 기본 20
 
-    # 유저 정보 확인
-    user_resp = requests.get(f"https://lichess.org/api/user/{username}", headers=headers)
+    if not username:
+        return "사용자명을 입력해주세요."
+
+    headers = {
+        "Authorization": f"Bearer {TOKEN}",
+        "Accept": "application/x-ndjson"  # 이 헤더 추가
+    }
+
+    # 사용자 정보 요청
+    user_url = f"https://lichess.org/api/user/{username}"
+    user_resp = requests.get(user_url, headers=headers)
     if user_resp.status_code != 200:
         return f"사용자 '{username}' 정보를 불러올 수 없습니다."
-
     user = user_resp.json()
 
-    # 최근 게임 NDJSON 가져오기
-    games_resp = requests.get(
-    f"https://lichess.org/api/games/user/{username}",
-    headers={
-        "Authorization": f"Bearer {TOKEN}",
-        "Accept": "application/x-ndjson"
-    },
-    params={"max": 20},
-    stream=True
-)
+    # 게임 정보 요청 (NDJSON)
+    games_url = f"https://lichess.org/api/games/user/{username}"
+    params = {"max": max_games, "analysed": "true"}
+    games_resp = requests.get(games_url, headers=headers, params=params, stream=True)
 
     games = []
+    wins = 0
+    total = 0
 
     for line in games_resp.iter_lines():
         if not line:
@@ -49,30 +53,24 @@ def player():
         except json.JSONDecodeError:
             continue
 
-        # 내 색상 및 상대 정보
-        white_user = game["players"].get("white", {}).get("user", {}).get("name", "")
-        black_user = game["players"].get("black", {}).get("user", {}).get("name", "")
-        winner = game.get("winner")  # "white", "black", or None
+        games.append(game)
+        total += 1
 
-        if username.lower() == white_user.lower():
-            color = "White"
-            opponent = black_user
-            result = "Win" if winner == "white" else "Loss" if winner == "black" else "Draw"
-        elif username.lower() == black_user.lower():
-            color = "Black"
-            opponent = white_user
-            result = "Win" if winner == "black" else "Loss" if winner == "white" else "Draw"
-        else:
-            continue  # 유저가 포함되지 않은 게임은 제외
+        # 승리 판별
+        winner = game.get("winner")
+        if not winner:
+            continue
 
-        games.append({
-            "date": game.get("createdAt"),
-            "color": color,
-            "opponent": opponent,
-            "result": result
-        })
+        white = game["players"].get("white", {}).get("user", {}).get("name", "").lower()
+        black = game["players"].get("black", {}).get("user", {}).get("name", "").lower()
+        uname = username.lower()
 
-    return render_template("player.html", user=user, games=games)
+        if (winner == "white" and white == uname) or (winner == "black" and black == uname):
+            wins += 1
+
+    win_rate = round((wins / total) * 100, 2) if total else 0
+
+    return render_template("player.html", user=user, games=games, win_rate=win_rate, total=total, max_games=max_games)
 
 if __name__ == "__main__":
     app.run(debug=True)

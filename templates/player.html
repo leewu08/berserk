@@ -1,25 +1,126 @@
-<!doctype html>
-<html>
-<head><title>{{ user.username }}의 최근 전적</title></head>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ user.username }}님의 프로필 및 전적</title>
+    <style>
+        table {border-collapse: collapse; width: 100%; max-width: 900px;}
+        th, td {border: 1px solid #ddd; padding: 8px; text-align: center;}
+        th {background-color: #007bff; color: white;}
+        tr:nth-child(even) {background-color: #f2f2f2;}
+        .section {margin-bottom: 40px;}
+    </style>
+</head>
 <body>
-  <h1>{{ user.username }}의 최근 전적</h1>
-  <p>총 {{ games|length }} 게임</p>
-  <table border="1">
-    <tr>
-      <th>날짜</th>
-      <th>색상</th>
-      <th>상대</th>
-      <th>결과</th>
-    </tr>
-    {% for game in games %}
-    <tr>
-      <td>{{ game.date | timestamp_to_date }}</td>
-      <td>{{ game.color }}</td>
-      <td>{{ game.opponent }}</td>
-      <td>{{ game.result }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  <br><a href="/">처음으로</a>
+    <h1>{{ user.username }}님의 프로필</h1>
+
+    <div class="section">
+        <p><strong>가입일:</strong> {{ user.createdAt | timestamp_to_date }}</p>
+        <p><strong>최근 접속:</strong> {{ user.seenAt | timestamp_to_date }}</p>
+        <p><strong>프로필 링크:</strong> <a href="{{ user.url }}" target="_blank">{{ user.url }}</a></p>
+    </div>
+
+    <div class="section">
+        <h2>게임별 레이팅</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>게임 종류</th>
+                    <th>게임 수</th>
+                    <th>레이팅</th>
+                    <th>RD</th>
+                    <th>변화량(Prog)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mode, data in user.perfs.items() %}
+                <tr>
+                    <td>{{ mode }}</td>
+                    <td>{{ data.games }}</td>
+                    <td>{{ data.rating }}</td>
+                    <td>{{ data.rd }}</td>
+                    <td>{{ data.prog }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>전적 통계</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>전체 게임 수</th>
+                    <th>랭크 게임</th>
+                    <th>승리</th>
+                    <th>패배</th>
+                    <th>무승부</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ user.count.all }}</td>
+                    <td>{{ user.count.rated }}</td>
+                    <td>{{ user.count.win }}</td>
+                    <td>{{ user.count.loss }}</td>
+                    <td>{{ user.count.draw }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <p><strong>승률: </strong>{{ win_rate }}%</p>
+    </div>
+
+    <div class="section">
+        <h2>최근 {{ games|length }} 게임</h2>
+        {% if games %}
+        <table>
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>색상</th>
+                    <th>상대</th>
+                    <th>결과</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for game in games %}
+                <tr>
+                    <td>{{ game.createdAt | timestamp_to_date }}</td>
+                    <td>
+                        {% if game.players.white.user.name.lower() == user.username.lower() %}
+                            흰색
+                        {% else %}
+                            검은색
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if game.players.white.user.name.lower() == user.username.lower() %}
+                            {{ game.players.black.user.name }}
+                        {% else %}
+                            {{ game.players.white.user.name }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% set winner = game.winner if 'winner' in game else None %}
+                        {% if not winner %}
+                            무승부
+                        {% else %}
+                            {% if (winner == 'white' and game.players.white.user.name.lower() == user.username.lower()) or
+                                  (winner == 'black' and game.players.black.user.name.lower() == user.username.lower()) %}
+                                승리
+                            {% else %}
+                                패배
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>최근 게임이 없습니다.</p>
+        {% endif %}
+    </div>
 </body>
 </html>

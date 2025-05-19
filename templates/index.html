@@ -1,11 +1,12 @@
-<!doctype html>
-<html>
-<head><title>Lichess 유저 검색</title></head>
-<body>
-  <h1>Lichess 유저 전적 검색</h1>
-  <form action="/player" method="post">
-    <input type="text" name="username" placeholder="유저 이름 입력" required>
-    <button type="submit">검색</button>
-  </form>
-</body>
-</html>
+<form method="post" action="/player">
+  <label>사용자 이름: <input type="text" name="username" required></label>
+  <label>최근 게임 수:
+    <select name="max_games">
+      <option value="5">5</option>
+      <option value="10">10</option>
+      <option value="20" selected>20</option>
+      <option value="50">50</option>
+    </select>
+  </label>
+  <button type="submit">조회</button>
+</form>
