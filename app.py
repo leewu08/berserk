@@ -28,4 +28,4 @@ def player():
     return render_template("player.html", user=user, win_rate=win_rate, total=total)
 
 if __name__ == "__main__":
-    app.run(debug=True)where python
+    app.run(debug=True)
