@@ -1,4 +1,11 @@
-<form method="POST" action="/player">
-  <input type="text" name="username" placeholder="Lichess ID">
-  <button type="submit">조회</button>
-</form>
+<!doctype html>
+<html>
+<head><title>Lichess 유저 검색</title></head>
+<body>
+  <h1>Lichess 유저 전적 검색</h1>
+  <form action="/player" method="post">
+    <input type="text" name="username" placeholder="유저 이름 입력" required>
+    <button type="submit">검색</button>
+  </form>
+</body>
+</html>

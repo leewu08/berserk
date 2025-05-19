@@ -1,23 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ user['username'] }}의 체스 분석</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-<div class="container mt-5">
-    <h1 class="mb-4">{{ user['username'] }}님의 체스 프로필</h1>
-    
-    <div class="card mb-4">
-        <div class="card-body">
-            <p><strong>가입일:</strong> {{ user['createdAt'][:10] }}</p>
-            <p><strong>현재 rating:</strong> {{ user.get('perfs', {}).get('rapid', {}).get('rating', 'N/A') }}</p>
-            <p><strong>최근 {{ total }}게임 기준 승률:</strong> {{ win_rate }}%</p>
-        </div>
-    </div>
-
-    <a href="/" class="btn btn-secondary">다시 검색</a>
-</div>
+<!doctype html>
+<html>
+<head><title>{{ user.username }}의 최근 전적</title></head>
+<body>
+  <h1>{{ user.username }}의 최근 전적</h1>
+  <p>총 {{ games|length }} 게임</p>
+  <table border="1">
+    <tr>
+      <th>날짜</th>
+      <th>색상</th>
+      <th>상대</th>
+      <th>결과</th>
+    </tr>
+    {% for game in games %}
+    <tr>
+      <td>{{ game.date | timestamp_to_date }}</td>
+      <td>{{ game.color }}</td>
+      <td>{{ game.opponent }}</td>
+      <td>{{ game.result }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <br><a href="/">처음으로</a>
 </body>
 </html>
