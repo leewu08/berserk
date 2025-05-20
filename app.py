@@ -1,11 +1,11 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, send_from_directory
 import requests
 import json
 import time
 
 app = Flask(__name__)
 
-TOKEN = "lip_nW7Hl5a6Qras9d6EeeGB"
+TOKEN = "lip_DDk4M4snJSiKMFLaRIKY"
 
 def timestamp_to_date(timestamp):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp / 1000))
@@ -82,6 +82,11 @@ def player():
     win_rate = round((wins / total) * 100, 2) if total else 0
 
     return render_template("player.html", user=user, games=games, win_rate=win_rate, total=total, max_games=max_games)
+
+# --- 여기가 추가된 부분: 서비스워커를 루트 경로에서 서빙 ---
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory('static', 'service-worker.js')
 
 if __name__ == "__main__":
     app.run(debug=True, port=5002)

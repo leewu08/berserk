@@ -1,12 +1,38 @@
-<form method="post" action="/player">
-  <label>사용자 이름: <input type="text" name="username" required></label>
-  <label>최근 게임 수:
-    <select name="max_games">
-      <option value="5">5</option>
-      <option value="10">10</option>
-      <option value="20" selected>20</option>
-      <option value="50">50</option>
-    </select>
-  </label>
-  <button type="submit">조회</button>
-</form>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chess Analyzer</title>
+
+  <!-- PWA 매니페스트 -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#317EFB" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+</head>
+<body>
+  <h1>Chess Analyzer</h1>
+
+  <form method="post" action="/player">
+    <label>사용자 이름: <input type="text" name="username" required></label>
+    <label>최근 게임 수:
+      <select name="max_games">
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="20" selected>20</option>
+        <option value="50">50</option>
+      </select>
+    </label>
+    <button type="submit">조회</button>
+  </form>
+
+  <!-- 서비스워커 등록 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('서비스워커 등록 완료'))
+        .catch(err => console.error('서비스워커 등록 실패', err));
+    }
+  </script>
+</body>
+</html>
