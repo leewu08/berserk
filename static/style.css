@@ -1,0 +1,94 @@
+/* 기본 설정 */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+/* 제목 스타일 */
+h1, h2 {
+  color: #317EFB;
+  margin-top: 0;
+}
+
+/* 섹션 간 간격 */
+.section {
+  margin-bottom: 40px;
+}
+
+/* 테이블 스타일 */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #317EFB;
+  color: white;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+/* 분석 상태 텍스트 */
+.analysed {
+  color: green;
+  font-weight: bold;
+}
+
+.not-analysed {
+  color: red;
+  font-weight: bold;
+}
+
+/* 링크 스타일 */
+a {
+  color: #317EFB;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  th {
+    display: none;
+  }
+
+  td {
+    position: relative;
+    padding-left: 50%;
+    text-align: left;
+    border: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  td:before {
+    content: attr(data-label);
+    position: absolute;
+    left: 10px;
+    font-weight: bold;
+    color: #555;
+  }
+}

@@ -34,5 +34,33 @@
         .catch(err => console.error('서비스워커 등록 실패', err));
     }
   </script>
+
+  <!-- 설치 버튼 추가 -->
+  <button id="installBtn" style="display:none; position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; font-size: 16px;">
+    앱 설치하기
+  </button>
+
+  <script>
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();  // 기본 설치 팝업 막기
+      deferredPrompt = e;
+      installBtn.style.display = 'block'; // 설치 버튼 보이기
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt(); // 설치 팝업 띄우기
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = 'none'; // 버튼 숨기기
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('PWA가 설치되었습니다!');
+    });
+  </script>
 </body>
 </html>
