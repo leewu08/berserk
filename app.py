@@ -5,7 +5,7 @@ import time
 
 app = Flask(__name__)
 
-TOKEN = "lip_fbGgHXuGvdCE3i3ESA4O"
+TOKEN = "lip_30oToyHzdGRkJ367otbO"
 
 # Jinja2 필터 등록: timestamp를 읽기 쉬운 날짜로
 def timestamp_to_date(timestamp):
@@ -73,4 +73,4 @@ def player():
     return render_template("player.html", user=user, games=games, win_rate=win_rate, total=total, max_games=max_games)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True,port=5002)
