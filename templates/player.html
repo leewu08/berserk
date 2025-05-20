@@ -137,8 +137,8 @@
             <td>{{ game.opening.name if game.opening else '알 수 없음' }}</td>
             <td>{{ game.moves[:50] }}{% if game.moves|length > 50 %}...{% endif %}</td>
             <td>{{ game.status }}</td>
-            <td class="{{ 'analysed' if game.is_analysed else 'not-analysed' }}">
-                {{ '분석됨' if game.is_analysed else '미분석' }}
+            <td class="{{ 'analysed' if game['is_analysed'] else 'not-analysed' }}">
+                {{ '분석됨' if game['is_analysed'] else '미분석' }}
             </td>
             <td>
                 <a href="https://lichess.org/{{ game.id }}" target="_blank">보기</a>
