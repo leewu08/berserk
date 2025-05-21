@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <title>{{ user.username }}님의 프로필 및 전적</title>
-     <style>
+    <style>
         table {border-collapse: collapse; width: 100%; max-width: 900px;}
         th, td {border: 1px solid #ddd; padding: 8px; text-align: center;}
         th {background-color: #007bff; color: white;}
         tr:nth-child(even) {background-color: #f2f2f2;}
         .section {margin-bottom: 40px;}
-        /* 추가된 스타일 */
         .analysed {
             color: green;
             font-weight: bold;
@@ -21,8 +20,6 @@
     </style>
 </head>
 <body>
-</head>
-<body>
     <h1>{{ user.username }}님의 프로필</h1>
 
     <div class="section">
@@ -32,33 +29,7 @@
     </div>
 
     <div class="section">
-        <h2>게임별 레이팅</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>게임 종류</th>
-                    <th>게임 수</th>
-                    <th>레이팅</th>
-                    <th>RD</th>
-                    <th>변화량(Prog)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mode, data in user.perfs.items() %}
-                <tr>
-                    <td>{{ mode }}</td>
-                    <td>{{ data.games }}</td>
-                    <td>{{ data.rating }}</td>
-                    <td>{{ data.rd }}</td>
-                    <td>{{ data.prog }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="section">
-        <h2>전적 통계</h2>
+        <h2>전적</h2>
         <table>
             <thead>
                 <tr>
@@ -83,73 +54,182 @@
     </div>
 
     <div class="section">
-        <h2>최근 {{ games|length }} 게임</h2>
-{% if games %}
-<table>
-    <thead>
-        <tr>
-            <th>날짜</th>
-            <th>색상</th>
-            <th>상대</th>
-            <th>내 레이팅</th>
-            <th>상대 레이팅</th>
-            <th>결과</th>
-            <th>오프닝</th>
-            <th>수 순</th>
-            <th>종료 방식</th>
-            <th>분석 상태</th>
-            <th>게임 링크</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for game in games %}
-        <tr>
-            <td>{{ game.createdAt | timestamp_to_date }}</td>
-            <td>
-                {% set is_white = game.players.white.user.name.lower() == user.username.lower() %}
-                {{ "흰색" if is_white else "검은색" }}
-            </td>
-            <td>
-                {% if is_white %}
-                    {{ game.players.black.user.name }}
-                {% else %}
-                    {{ game.players.white.user.name }}
-                {% endif %}
-            </td>
-            <td>
-                {{ game.players.white.rating if is_white else game.players.black.rating }}
-            </td>
-            <td>
-                {{ game.players.black.rating if is_white else game.players.white.rating }}
-            </td>
-            <td>
-                {% set winner = game.winner if 'winner' in game else None %}
-                {% if not winner %}
-                    무승부
-                {% else %}
-                    {% if (winner == 'white' and is_white) or (winner == 'black' and not is_white) %}
-                        승리
-                    {% else %}
-                        패배
-                    {% endif %}
-                {% endif %}
-            </td>
-            <td>{{ game.opening.name if game.opening else '알 수 없음' }}</td>
-            <td>{{ game.moves[:50] }}{% if game.moves|length > 50 %}...{% endif %}</td>
-            <td>{{ game.status }}</td>
-            <td class="{{ 'analysed' if game['is_analysed'] else 'not-analysed' }}">
-                {{ '분석됨' if game['is_analysed'] else '미분석' }}
-            </td>
-            <td>
-                <a href="https://lichess.org/{{ game.id }}" target="_blank">보기</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-    <p>최근 게임이 없습니다.</p>
-{% endif %}
+        <h2>게임별 레이팅</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>게임 종류</th>
+                    <th>게임 수</th>
+                    <th>레이팅</th>
+                    <th>RD</th>
+                    <th>변화량(Prog)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mode, data in sorted_perfs %}
+                <tr>
+                    <td>{{ mode }}</td>
+                    <td>{{ data.games }}</td>
+                    <td>{{ data.rating }}</td>
+                    <td>{% if data.rd != 500 %}{{ data.rd }}{% endif %}</td>
+                    <td>{{ data.prog }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    <div class="section">
+        <h2>최근 게임 (최대 {{ max_games }}개)</h2>
+        <label for="endTypeSelect">종료 방식 필터: </label>
+        <select id="endTypeSelect">
+            <option value="all">전체</option>
+            <option value="mate">체크메이트</option>
+            <option value="resign">기권</option>
+            <option value="timeout">시간초과</option>
+            <option value="draw">무승부</option>
+            <option value="outoftime">시간초과 (오프라인)</option>
+            <!-- 필요한 종료 상태 추가 가능 -->
+        </select>
+        <table id="gamesTable">
+            <thead>
+                <tr>
+                    <th>날짜</th>
+                    <th>색상</th>
+                    <th>상대</th>
+                    <th>내 레이팅</th>
+                    <th>상대 레이팅</th>
+                    <th>결과</th>
+                    <th>오프닝</th>
+                    <th>수 순</th>
+                    <th>종료 방식</th>
+                    <th>분석 상태</th>
+                    <th>게임 링크</th>
+                </tr>
+            </thead>
+            <tbody id="gamesBody">
+                {% for game in games %}
+                <tr>
+                    <td>{{ game.createdAt | timestamp_to_date }}</td>
+                    <td>
+                        {% set is_white = game.players.white.user.name.lower() == user.username.lower() %}
+                        {{ "흰색" if is_white else "검은색" }}
+                    </td>
+                    <td>
+                        {% if is_white %}
+                            {{ game.players.black.user.name }}
+                        {% else %}
+                            {{ game.players.white.user.name }}
+                        {% endif %}
+                    </td>
+                    <td>{{ game.players.white.rating if is_white else game.players.black.rating }}</td>
+                    <td>{{ game.players.black.rating if is_white else game.players.white.rating }}</td>
+                    <td>
+                        {% set winner = game.winner if 'winner' in game else None %}
+                        {% if not winner %}
+                            무승부
+                        {% else %}
+                            {% if (winner == 'white' and is_white) or (winner == 'black' and not is_white) %}
+                                승리
+                            {% else %}
+                                패배
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>{{ game.opening.name if game.opening else '알 수 없음' }}</td>
+                    <td>{{ game.moves[:50] }}{% if game.moves|length > 50 %}...{% endif %}</td>
+                    <td>{{ game.status }}</td>
+                    <td class="{{ 'analysed' if game.is_analysed else 'not-analysed' }}">
+                        {{ '분석됨' if game.is_analysed else '미분석' }}
+                    </td>
+                    <td><a href="https://lichess.org/{{ game.id }}" target="_blank">보기</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const username = "{{ user.username }}";
+    const maxGames = {{ max_games }};
+    const endTypeSelect = document.getElementById('endTypeSelect');
+    const gamesBody = document.getElementById('gamesBody');
+
+    function timestampToDate(ts) {
+        const d = new Date(ts);
+        return d.toLocaleString();
+    }
+
+    function renderGames(games) {
+        gamesBody.innerHTML = '';
+        if (games.length === 0) {
+            gamesBody.innerHTML = '<tr><td colspan="11">조건에 맞는 게임이 없습니다.</td></tr>';
+            return;
+        }
+        games.forEach(game => {
+            const isWhite = (game.players.white.user.name.toLowerCase() === username.toLowerCase());
+            const opponent = isWhite ? game.players.black.user.name : game.players.white.user.name;
+            const myRating = isWhite ? game.players.white.rating : game.players.black.rating;
+            const oppRating = isWhite ? game.players.black.rating : game.players.white.rating;
+
+            const winner = game.winner;
+            let resultText = "무승부";
+            if (winner) {
+                if ((winner === "white" && isWhite) || (winner === "black" && !isWhite)) {
+                    resultText = "승리";
+                } else {
+                    resultText = "패배";
+                }
+            }
+
+            const openingName = game.opening || "알 수 없음";
+            const movesPreview = game.moves ? (game.moves.length > 50 ? game.moves.substring(0, 50) + "..." : game.moves) : "";
+            const status = game.status || "";
+
+            const analysedClass = game.is_analysed ? "analysed" : "not-analysed";
+            const analysedText = game.is_analysed ? "분석됨" : "미분석";
+
+            const createdAt = timestampToDate(game.createdAt);
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${createdAt}</td>
+                <td>${isWhite ? "흰색" : "검은색"}</td>
+                <td>${opponent}</td>
+                <td>${myRating}</td>
+                <td>${oppRating}</td>
+                <td>${resultText}</td>
+                <td>${openingName}</td>
+                <td>${movesPreview}</td>
+                <td>${status}</td>
+                <td class="${analysedClass}">${analysedText}</td>
+                <td><a href="https://lichess.org/${game.id}" target="_blank">보기</a></td>
+            `;
+            gamesBody.appendChild(row);
+        });
+    }
+
+    async function fetchGames(endType) {
+        let url = `/api/games/${username}?max_games=${maxGames}`;
+        if (endType && endType !== 'all') {
+            url += `&endType=${encodeURIComponent(endType)}`;
+        }
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error("게임 데이터를 불러오는데 실패했습니다.");
+            const data = await res.json();
+            renderGames(data);
+        } catch (err) {
+            gamesBody.innerHTML = `<tr><td colspan="11" style="color:red;">${err.message}</td></tr>`;
+        }
+    }
+
+    endTypeSelect.addEventListener('change', () => {
+        fetchGames(endTypeSelect.value);
+    });
+});
+</script>
+
 </body>
 </html>
