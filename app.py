@@ -14,13 +14,18 @@ def timestamp_to_date(timestamp):
 
 app.jinja_env.filters['timestamp_to_date'] = timestamp_to_date
 
-def fetch_analysis_public(username, max_games=20):
+def fetch_analysis_public(username, max_games=20, since=None, until=None):
     url = f"https://lichess.org/api/games/user/{username}"
     params = {
         "max": max_games,
         "evals": "true",
         "opening": "true"
     }
+    if since:
+        params["since"] = since
+    if until:
+        params["until"] = until
+
     headers = {
         "Accept": "application/x-ndjson"
     }
@@ -36,11 +41,40 @@ def fetch_analysis_public(username, max_games=20):
             game = json.loads(line)
         except json.JSONDecodeError:
             continue
-        
+
         is_analysed = bool(game.get("analysis")) or game.get("isAnalysed", False)
         game["is_analysed"] = is_analysed
         games.append(game)
     return games
+
+def fetch_analysis_paginated(username, max_games=20, since=None, until=None):
+    all_games = []
+    max_per_request = 200  # Lichess API 최대 한도
+
+    current_until = until
+
+    while len(all_games) < max_games:
+        remaining = max_games - len(all_games)
+        fetch_count = min(max_per_request, remaining)
+
+        games = fetch_analysis_public(username, max_games=fetch_count, since=since, until=current_until)
+        if not games:
+            break
+
+        all_games.extend(games)
+
+        oldest_game_time = games[-1].get('createdAt')
+        if oldest_game_time is None:
+            break
+
+        # 중복 방지용으로 1 밀리초 빼기
+        current_until = oldest_game_time - 1
+
+        # 요청한 수보다 적게 오면 더 이상 데이터 없음
+        if len(games) < fetch_count:
+            break
+
+    return all_games[:max_games]
 
 @app.route("/")
 def index():
@@ -68,7 +102,7 @@ def player():
     )
 
     try:
-        games = fetch_analysis_public(username, max_games)
+        games = fetch_analysis_paginated(username, max_games)
     except Exception as e:
         return f"게임 데이터를 불러오는 중 오류가 발생했습니다: {str(e)}"
 
@@ -101,24 +135,30 @@ def player():
 def api_games(username):
     end_type = request.args.get("endType", "").lower()
     max_games = int(request.args.get("max_games", 20))
+    since = request.args.get("since")  # 밀리초 timestamp 문자열 예상
+    until = request.args.get("until")  # 밀리초 timestamp 문자열 예상
 
     try:
-        games = fetch_analysis_public(username, max_games)
+        raw_games = fetch_analysis_paginated(username, max_games=max_games, since=since, until=until)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
     if end_type and end_type != "all":
-        games = [g for g in games if g.get("status", "").lower() == end_type]
+        filtered_games = [g for g in raw_games if g.get("status", "").lower() == end_type]
+    else:
+        filtered_games = raw_games
+
+    filtered_games = filtered_games[:max_games]
 
     result = []
-    for game in games:
+    for game in filtered_games:
         result.append({
             "id": game.get("id"),
             "createdAt": game.get("createdAt"),
             "status": game.get("status"),
             "winner": game.get("winner"),
             "players": game.get("players"),
-            "opening": game.get("opening", {}).get("name", "알 수 없음"),
+            "opening": game.get("opening", {}),
             "moves": game.get("moves"),
             "is_analysed": game.get("is_analysed"),
         })

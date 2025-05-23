@@ -17,6 +17,52 @@
             color: red;
             font-weight: bold;
         }
+        label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        select {
+            padding: 4px 8px;
+            margin-right: 15px;
+        }
+        
+        /* 색상 열 배경 */
+        .white-player {
+            background-color: #ffffff; /* 흰색 */
+        }
+
+        .black-player {
+            background-color: #e6e6e6; /* 은은한 회색 */
+        }
+
+        /* 결과 열 배경 */
+        .result-win {
+            background-color: #d4edda; /* 은은한 연두색 */
+            color: #155724;
+            font-weight: bold;
+        }
+
+        .result-lose {
+            background-color: #f8d7da; /* 은은한 붉은색 */
+            color: #721c24;
+            font-weight: bold;
+        }
+
+        .result-draw {
+            background-color: #f0f0f0; /* 아주 연한 회색 */
+            color: #555;
+        }
+
+        /* 버튼 스타일 */
+        #loadMoreBtn, #collapseBtn {
+            margin-top: 10px;
+            padding: 6px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #collapseBtn {
+            margin-left: 10px;
+        }
     </style>
 </head>
 <body>
@@ -50,9 +96,16 @@
                 </tr>
             </tbody>
         </table>
-        <p><strong>승률: </strong>{{ win_rate }}%</p>
-    </div>
 
+        {% set effective_games = user.count.all - user.count.draw %}
+        {% if effective_games > 0 %}
+            {% set win_rate = (user.count.win / effective_games) * 100 %}
+        {% else %}
+            {% set win_rate = 0 %}
+        {% endif %}
+
+    <p><strong>승률: </strong>{{ win_rate | round(2) }}%</p>
+</div>
     <div class="section">
         <h2>게임별 레이팅</h2>
         <table>
@@ -81,7 +134,26 @@
 
     <div class="section">
         <h2>최근 게임 (최대 {{ max_games }}개)</h2>
-        <label for="endTypeSelect">종료 방식 필터: </label>
+
+        <!-- 필터 UI -->
+        <label for="timeFilterSelect">기간 필터:</label>
+        <select id="timeFilterSelect">
+            <option value="all">전체</option>
+            <option value="7">최근 1주</option>
+            <option value="30">최근 1개월</option>
+            <option value="90">최근 3개월</option>
+        </select>
+
+        <label for="maxGamesSelect">표시할 게임 수:</label>
+        <select id="maxGamesSelect">
+            <option value="10">10개</option>
+            <option value="20">20개</option>
+            <option value="50" selected>50개</option>
+            <option value="100">100개</option>
+            <option value="200">200개</option>
+        </select>
+
+        <label for="endTypeSelect">종료 방식 필터:</label>
         <select id="endTypeSelect">
             <option value="all">전체</option>
             <option value="mate">체크메이트</option>
@@ -89,8 +161,10 @@
             <option value="timeout">시간초과</option>
             <option value="draw">무승부</option>
             <option value="outoftime">시간초과 (오프라인)</option>
-            <!-- 필요한 종료 상태 추가 가능 -->
         </select>
+
+        <br/><br/>
+
         <table id="gamesTable">
             <thead>
                 <tr>
@@ -108,66 +182,46 @@
                 </tr>
             </thead>
             <tbody id="gamesBody">
-                {% for game in games %}
-                <tr>
-                    <td>{{ game.createdAt | timestamp_to_date }}</td>
-                    <td>
-                        {% set is_white = game.players.white.user.name.lower() == user.username.lower() %}
-                        {{ "흰색" if is_white else "검은색" }}
-                    </td>
-                    <td>
-                        {% if is_white %}
-                            {{ game.players.black.user.name }}
-                        {% else %}
-                            {{ game.players.white.user.name }}
-                        {% endif %}
-                    </td>
-                    <td>{{ game.players.white.rating if is_white else game.players.black.rating }}</td>
-                    <td>{{ game.players.black.rating if is_white else game.players.white.rating }}</td>
-                    <td>
-                        {% set winner = game.winner if 'winner' in game else None %}
-                        {% if not winner %}
-                            무승부
-                        {% else %}
-                            {% if (winner == 'white' and is_white) or (winner == 'black' and not is_white) %}
-                                승리
-                            {% else %}
-                                패배
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>{{ game.opening.name if game.opening else '알 수 없음' }}</td>
-                    <td>{{ game.moves[:50] }}{% if game.moves|length > 50 %}...{% endif %}</td>
-                    <td>{{ game.status }}</td>
-                    <td class="{{ 'analysed' if game.is_analysed else 'not-analysed' }}">
-                        {{ '분석됨' if game.is_analysed else '미분석' }}
-                    </td>
-                    <td><a href="https://lichess.org/{{ game.id }}" target="_blank">보기</a></td>
-                </tr>
-                {% endfor %}
+                <!-- 기본 렌더링은 JS에서 fetch로 처리 -->
             </tbody>
         </table>
+
+        <button id="loadMoreBtn">더 보기</button>
+        <button id="collapseBtn" style="display:none;">접기</button>
     </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const username = "{{ user.username }}";
-    const maxGames = {{ max_games }};
     const endTypeSelect = document.getElementById('endTypeSelect');
+    const timeFilterSelect = document.getElementById('timeFilterSelect');
+    const maxGamesSelect = document.getElementById('maxGamesSelect');
     const gamesBody = document.getElementById('gamesBody');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    const collapseBtn = document.getElementById('collapseBtn');
+
+    const INITIAL_SHOW_COUNT = 10;
+    let maxRowsToShow = INITIAL_SHOW_COUNT;
+    let allGames = [];
 
     function timestampToDate(ts) {
         const d = new Date(ts);
         return d.toLocaleString();
     }
 
-    function renderGames(games) {
+    function renderGames() {
         gamesBody.innerHTML = '';
-        if (games.length === 0) {
+
+        const gamesToShow = allGames.slice(0, maxRowsToShow);
+
+        if (gamesToShow.length === 0) {
             gamesBody.innerHTML = '<tr><td colspan="11">조건에 맞는 게임이 없습니다.</td></tr>';
+            loadMoreBtn.style.display = 'none';
+            collapseBtn.style.display = 'none';
             return;
         }
-        games.forEach(game => {
+
+        for (const game of gamesToShow) {
             const isWhite = (game.players.white.user.name.toLowerCase() === username.toLowerCase());
             const opponent = isWhite ? game.players.black.user.name : game.players.white.user.name;
             const myRating = isWhite ? game.players.white.rating : game.players.black.rating;
@@ -175,15 +229,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const winner = game.winner;
             let resultText = "무승부";
+            let resultClass = "result-draw";
+
             if (winner) {
                 if ((winner === "white" && isWhite) || (winner === "black" && !isWhite)) {
                     resultText = "승리";
+                    resultClass = "result-win";
                 } else {
                     resultText = "패배";
+                    resultClass = "result-lose";
                 }
             }
 
-            const openingName = game.opening || "알 수 없음";
+            const openingName = game.opening?.name || "알 수 없음";
             const movesPreview = game.moves ? (game.moves.length > 50 ? game.moves.substring(0, 50) + "..." : game.moves) : "";
             const status = game.status || "";
 
@@ -193,41 +251,68 @@ document.addEventListener('DOMContentLoaded', () => {
             const createdAt = timestampToDate(game.createdAt);
 
             const row = document.createElement('tr');
+            const colorClass = isWhite ? "white-player" : "black-player";
+
             row.innerHTML = `
                 <td>${createdAt}</td>
-                <td>${isWhite ? "흰색" : "검은색"}</td>
+                <td class="${colorClass}">${isWhite ? "흰색" : "검은색"}</td>
                 <td>${opponent}</td>
                 <td>${myRating}</td>
                 <td>${oppRating}</td>
-                <td>${resultText}</td>
+                <td class="${resultClass}">${resultText}</td>
                 <td>${openingName}</td>
-                <td>${movesPreview}</td>
+                <td title="${game.moves}">${movesPreview}</td>
                 <td>${status}</td>
                 <td class="${analysedClass}">${analysedText}</td>
                 <td><a href="https://lichess.org/${game.id}" target="_blank">보기</a></td>
             `;
             gamesBody.appendChild(row);
-        });
+        }
+
+        // 버튼 표시 토글
+        loadMoreBtn.style.display = (maxRowsToShow < allGames.length) ? 'inline-block' : 'none';
+        collapseBtn.style.display = (maxRowsToShow > INITIAL_SHOW_COUNT) ? 'inline-block' : 'none';
     }
 
-    async function fetchGames(endType) {
-        let url = `/api/games/${username}?max_games=${maxGames}`;
-        if (endType && endType !== 'all') {
-            url += `&endType=${encodeURIComponent(endType)}`;
+    async function fetchGames() {
+        let url = `/api/games/${username}?max_games=${maxGamesSelect.value}`;
+
+        if (endTypeSelect.value && endTypeSelect.value !== 'all') {
+            url += `&endType=${encodeURIComponent(endTypeSelect.value)}`;
         }
+        if (timeFilterSelect.value && timeFilterSelect.value !== 'all') {
+            url += `&days=${encodeURIComponent(timeFilterSelect.value)}`;
+        }
+
         try {
             const res = await fetch(url);
             if (!res.ok) throw new Error("게임 데이터를 불러오는데 실패했습니다.");
             const data = await res.json();
-            renderGames(data);
+            allGames = data;
+            maxRowsToShow = INITIAL_SHOW_COUNT;
+            renderGames();
         } catch (err) {
             gamesBody.innerHTML = `<tr><td colspan="11" style="color:red;">${err.message}</td></tr>`;
+            loadMoreBtn.style.display = 'none';
+            collapseBtn.style.display = 'none';
         }
     }
 
-    endTypeSelect.addEventListener('change', () => {
-        fetchGames(endTypeSelect.value);
+    loadMoreBtn.addEventListener('click', () => {
+        maxRowsToShow = Math.min(maxRowsToShow + 10, allGames.length);
+        renderGames();
     });
+
+    collapseBtn.addEventListener('click', () => {
+        maxRowsToShow = INITIAL_SHOW_COUNT;
+        renderGames();
+    });
+
+    [endTypeSelect, timeFilterSelect, maxGamesSelect].forEach(el => {
+        el.addEventListener('change', fetchGames);
+    });
+
+    fetchGames();
 });
 </script>
 
