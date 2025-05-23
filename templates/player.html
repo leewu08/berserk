@@ -1,382 +1,296 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <meta charset="UTF-8" />
-    <title>{{ user.username }}님의 프로필 및 전적</title>
-    <style>
-                .chart-canvas {
-            width: 700px !important;  /* 원하는 너비 */
-            height: 350px !important; /* 원하는 높이 */
-            max-width: 100%;          /* 반응형 유지 */
-        }
-
-        table {border-collapse: collapse; width: 100%; max-width: 900px;}
-        th, td {border: 1px solid #ddd; padding: 8px; text-align: center;}
-        th {background-color: #007bff; color: white;}
-        tr:nth-child(even) {background-color: #f2f2f2;}
-        .section {margin-bottom: 40px;}
-        .analysed {
-            color: green;
-            font-weight: bold;
-        }
-        .not-analysed {
-            color: red;
-            font-weight: bold;
-        }
-        label {
-            font-weight: bold;
-            margin-right: 5px;
-        }
-        select {
-            padding: 4px 8px;
-            margin-right: 15px;
-        }
-        
-        /* 색상 열 배경 */
-        .white-player {
-            background-color: #ffffff; /* 흰색 */
-        }
-
-        .black-player {
-            background-color: #e6e6e6; /* 은은한 회색 */
-        }
-
-        /* 결과 열 배경 */
-        .result-win {
-            background-color: #d4edda; /* 은은한 연두색 */
-            color: #155724;
-            font-weight: bold;
-        }
-
-        .result-lose {
-            background-color: #f8d7da; /* 은은한 붉은색 */
-            color: #721c24;
-            font-weight: bold;
-        }
-
-        .result-draw {
-            background-color: #f0f0f0; /* 아주 연한 회색 */
-            color: #555;
-        }
-
-        /* 버튼 스타일 */
-        #loadMoreBtn, #collapseBtn {
-            margin-top: 10px;
-            padding: 6px 12px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        #collapseBtn {
-            margin-left: 10px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>{{ user.username }}님의 프로필</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .chart-canvas {
+      width: 100%;
+      max-width: 700px;
+      height: 350px;
+      margin: auto;
+    }
+    .analysed { color: green; font-weight: bold; }
+    .not-analysed { color: red; font-weight: bold; }
+    .white-player { background-color: #ffffff; }
+    .black-player { background-color: #f1f1f1; }
+    .result-win { background-color: #d4edda; color: #155724; font-weight: bold; }
+    .result-lose { background-color: #f8d7da; color: #721c24; font-weight: bold; }
+    .result-draw { background-color: #f0f0f0; color: #555; }
+  </style>
 </head>
 <body>
-    <h1>{{ user.username }}님의 프로필</h1>
+<div class="page">
+  <div class="container-xl">
+    <h2 class="page-title mt-4">{{ user.username }}님의 프로필</h2>
 
-    <div class="section">
+    <div class="card my-4">
+      <div class="card-body">
         <p><strong>가입일:</strong> {{ user.createdAt | timestamp_to_date }}</p>
         <p><strong>최근 접속:</strong> {{ user.seenAt | timestamp_to_date }}</p>
         <p><strong>프로필 링크:</strong> <a href="{{ user.url }}" target="_blank">{{ user.url }}</a></p>
+      </div>
     </div>
 
-    <div class="section">
-        <h2>전적</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>전체 게임 수</th>
-                    <th>랭크 게임</th>
-                    <th>승리</th>
-                    <th>패배</th>
-                    <th>무승부</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ user.count.all }}</td>
-                    <td>{{ user.count.rated }}</td>
-                    <td>{{ user.count.win }}</td>
-                    <td>{{ user.count.loss }}</td>
-                    <td>{{ user.count.draw }}</td>
-                </tr>
-            </tbody>
+    <div class="card my-4">
+      <div class="card-header"><h3 class="card-title">전적</h3></div>
+      <div class="table-responsive">
+        <table class="table table-striped">
+          <thead><tr>
+            <th>전체 게임 수</th><th>랭크 게임</th><th>승리</th><th>패배</th><th>무승부</th>
+          </tr></thead>
+          <tbody>
+            <tr>
+              <td>{{ user.count.all }}</td>
+              <td>{{ user.count.rated }}</td>
+              <td>{{ user.count.win }}</td>
+              <td>{{ user.count.loss }}</td>
+              <td>{{ user.count.draw }}</td>
+            </tr>
+          </tbody>
         </table>
-
+      </div>
+      <div class="card-body">
         {% set effective_games = user.count.all - user.count.draw %}
         {% if effective_games > 0 %}
-            {% set win_rate = (user.count.win / effective_games) * 100 %}
+          {% set win_rate = (user.count.win / effective_games) * 100 %}
         {% else %}
-            {% set win_rate = 0 %}
+          {% set win_rate = 0 %}
         {% endif %}
-
-    <p><strong>승률: </strong>{{ win_rate | round(2) }}%</p>
-</div>
-    <div class="section">
-        <h2>게임별 레이팅</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>게임 종류</th>
-                    <th>게임 수</th>
-                    <th>레이팅</th>
-                    <th>RD</th>
-                    <th>변화량(Prog)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for mode, data in sorted_perfs %}
-                <tr>
-                    <td>{{ mode }}</td>
-                    <td>{{ data.games }}</td>
-                    <td>{{ data.rating }}</td>
-                    <td>{% if data.rd != 500 %}{{ data.rd }}{% endif %}</td>
-                    <td>{{ data.prog }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <p><strong>승률:</strong> {{ win_rate | round(2) }}%</p>
+      </div>
     </div>
-    <div>
-        <h3>📘 가장 많이 사용한 오프닝</h3>
-        <ul>
-            {% for opening, count in most_common_openings %}
-                <li>{{ opening }} - {{ count }}회</li>
+
+    <div class="card my-4">
+      <div class="card-header"><h3 class="card-title">게임별 레이팅</h3></div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead><tr>
+            <th>게임 종류</th><th>게임 수</th><th>레이팅</th><th>RD</th><th>변화량</th>
+          </tr></thead>
+          <tbody>
+            {% for mode, data in sorted_perfs %}
+              <tr>
+                <td>{{ mode }}</td>
+                <td>{{ data.games }}</td>
+                <td>{{ data.rating }}</td>
+                <td>{% if data.rd != 500 %}{{ data.rd }}{% endif %}</td>
+                <td>{{ data.prog }}</td>
+              </tr>
             {% endfor %}
-        </ul>
-    <canvas id="openingChart" class="chart-canvas"></canvas>
-
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div class="section">
-        <h2>최근 게임 (최대 {{ max_games }}개)</h2>
 
-        <!-- 필터 UI -->
-        <label for="timeFilterSelect">기간 필터:</label>
-        <select id="timeFilterSelect">
-            <option value="all">전체</option>
-            <option value="7">최근 1주</option>
-            <option value="30">최근 1개월</option>
-            <option value="90">최근 3개월</option>
-        </select>
+    <div class="card my-4">
+      <div class="card-header"><h3 class="card-title">📘 가장 많이 사용한 오프닝</h3></div>
+      <div class="card-body">
+        <ul>
+          {% for opening, count in most_common_openings %}
+            <li>{{ opening }} - {{ count }}회</li>
+          {% endfor %}
+        </ul>
+        <canvas id="openingChart" class="chart-canvas"></canvas>
+      </div>
+    </div>
 
-        <label for="maxGamesSelect">표시할 게임 수:</label>
-        <select id="maxGamesSelect">
-            <option value="10">10개</option>
-            <option value="20">20개</option>
-            <option value="50" selected>50개</option>
-            <option value="100">100개</option>
-            <option value="200">200개</option>
-        </select>
+    <div class="card my-4">
+      <div class="card-header"><h3 class="card-title">최근 게임 (최대 {{ max_games }}개)</h3></div>
+      <div class="card-body">
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <label class="form-label">기간 필터</label>
+            <select class="form-select" id="timeFilterSelect">
+              <option value="all">전체</option>
+              <option value="7">최근 1주</option>
+              <option value="30">최근 1개월</option>
+              <option value="90">최근 3개월</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">게임 수</label>
+            <select class="form-select" id="maxGamesSelect">
+              <option value="10">10개</option>
+              <option value="20">20개</option>
+              <option value="50" selected>50개</option>
+              <option value="100">100개</option>
+              <option value="200">200개</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">종료 방식</label>
+            <select class="form-select" id="endTypeSelect">
+              <option value="all">전체</option>
+              <option value="mate">체크메이트</option>
+              <option value="resign">기권</option>
+              <option value="timeout">시간초과</option>
+              <option value="draw">무승부</option>
+              <option value="outoftime">시간초과 (오프라인)</option>
+            </select>
+          </div>
+        </div>
 
-        <label for="endTypeSelect">종료 방식 필터:</label>
-        <select id="endTypeSelect">
-            <option value="all">전체</option>
-            <option value="mate">체크메이트</option>
-            <option value="resign">기권</option>
-            <option value="timeout">시간초과</option>
-            <option value="draw">무승부</option>
-            <option value="outoftime">시간초과 (오프라인)</option>
-        </select>
-
-        <br/><br/>
-
-        <table id="gamesTable">
+        <div class="table-responsive">
+          <table class="table" id="gamesTable">
             <thead>
-                <tr>
-                    <th>날짜</th>
-                    <th>색상</th>
-                    <th>상대</th>
-                    <th>내 레이팅</th>
-                    <th>상대 레이팅</th>
-                    <th>결과</th>
-                    <th>오프닝</th>
-                    <th>수 순</th>
-                    <th>종료 방식</th>
-                    <th>분석 상태</th>
-                    <th>게임 링크</th>
-                </tr>
+              <tr>
+                <th>날짜</th><th>색상</th><th>상대</th><th>내 레이팅</th><th>상대 레이팅</th>
+                <th>결과</th><th>오프닝</th><th>수 순</th><th>종료 방식</th><th>분석</th><th>링크</th>
+              </tr>
             </thead>
             <tbody id="gamesBody">
-                <!-- 기본 렌더링은 JS에서 fetch로 처리 -->
+              <!-- JavaScript로 삽입 -->
             </tbody>
-        </table>
+          </table>
+        </div>
 
-        <button id="loadMoreBtn">더 보기</button>
-        <button id="collapseBtn" style="display:none;">접기</button>
+        <div class="mt-3">
+          <button class="btn btn-primary" id="loadMoreBtn">더 보기</button>
+          <button class="btn btn-secondary" id="collapseBtn" style="display:none;">접기</button>
+        </div>
+      </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const username = "{{ user.username }}";
-    const endTypeSelect = document.getElementById('endTypeSelect');
-    const timeFilterSelect = document.getElementById('timeFilterSelect');
-    const maxGamesSelect = document.getElementById('maxGamesSelect');
-    const gamesBody = document.getElementById('gamesBody');
-    const loadMoreBtn = document.getElementById('loadMoreBtn');
-    const collapseBtn = document.getElementById('collapseBtn');
-    const ctx = document.getElementById('openingChart').getContext('2d');
+  const username = "{{ user.username }}";
+  const endTypeSelect = document.getElementById('endTypeSelect');
+  const timeFilterSelect = document.getElementById('timeFilterSelect');
+  const maxGamesSelect = document.getElementById('maxGamesSelect');
+  const gamesBody = document.getElementById('gamesBody');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  const collapseBtn = document.getElementById('collapseBtn');
+  const ctx = document.getElementById('openingChart').getContext('2d');
 
-    const INITIAL_SHOW_COUNT = 10;
-    let maxRowsToShow = INITIAL_SHOW_COUNT;
-    let allGames = [];
-    let openingChartInstance = null;
+  const INITIAL_SHOW_COUNT = 10;
+  let maxRowsToShow = INITIAL_SHOW_COUNT;
+  let allGames = [];
+  let openingChartInstance = null;
 
-    function timestampToDate(ts) {
-        const d = new Date(ts);
-        return d.toLocaleString();
+  function timestampToDate(ts) {
+    return new Date(ts).toLocaleString();
+  }
+
+  function renderGames() {
+    gamesBody.innerHTML = '';
+    const gamesToShow = allGames.slice(0, maxRowsToShow);
+
+    if (gamesToShow.length === 0) {
+      gamesBody.innerHTML = '<tr><td colspan="11">조건에 맞는 게임이 없습니다.</td></tr>';
+      loadMoreBtn.style.display = 'none';
+      collapseBtn.style.display = 'none';
+      return;
     }
 
-    function renderGames() {
-        gamesBody.innerHTML = '';
+    for (const game of gamesToShow) {
+      const isWhite = (game.players.white.user.name.toLowerCase() === username.toLowerCase());
+      const opponent = isWhite ? game.players.black.user.name : game.players.white.user.name;
+      const myRating = isWhite ? game.players.white.rating : game.players.black.rating;
+      const oppRating = isWhite ? game.players.black.rating : game.players.white.rating;
 
-        const gamesToShow = allGames.slice(0, maxRowsToShow);
-
-        if (gamesToShow.length === 0) {
-            gamesBody.innerHTML = '<tr><td colspan="11">조건에 맞는 게임이 없습니다.</td></tr>';
-            loadMoreBtn.style.display = 'none';
-            collapseBtn.style.display = 'none';
-            return;
+      const winner = game.winner;
+      let resultText = "무승부", resultClass = "result-draw";
+      if (winner) {
+        if ((winner === "white" && isWhite) || (winner === "black" && !isWhite)) {
+          resultText = "승리"; resultClass = "result-win";
+        } else {
+          resultText = "패배"; resultClass = "result-lose";
         }
+      }
 
-        for (const game of gamesToShow) {
-            const isWhite = (game.players.white.user.name.toLowerCase() === username.toLowerCase());
-            const opponent = isWhite ? game.players.black.user.name : game.players.white.user.name;
-            const myRating = isWhite ? game.players.white.rating : game.players.black.rating;
-            const oppRating = isWhite ? game.players.black.rating : game.players.white.rating;
+      const openingName = game.opening?.name || "알 수 없음";
+      const movesPreview = game.moves?.substring(0, 50) + (game.moves?.length > 50 ? "..." : "") || "";
+      const status = game.status || "";
+      const analysedText = game.is_analysed ? "분석됨" : "미분석";
+      const analysedClass = game.is_analysed ? "analysed" : "not-analysed";
+      const createdAt = timestampToDate(game.createdAt);
+      const colorClass = isWhite ? "white-player" : "black-player";
 
-            const winner = game.winner;
-            let resultText = "무승부";
-            let resultClass = "result-draw";
-
-            if (winner) {
-                if ((winner === "white" && isWhite) || (winner === "black" && !isWhite)) {
-                    resultText = "승리";
-                    resultClass = "result-win";
-                } else {
-                    resultText = "패배";
-                    resultClass = "result-lose";
-                }
-            }
-
-            const openingName = game.opening?.name || "알 수 없음";
-            const movesPreview = game.moves ? (game.moves.length > 50 ? game.moves.substring(0, 50) + "..." : game.moves) : "";
-            const status = game.status || "";
-
-            const analysedClass = game.is_analysed ? "analysed" : "not-analysed";
-            const analysedText = game.is_analysed ? "분석됨" : "미분석";
-
-            const createdAt = timestampToDate(game.createdAt);
-
-            const row = document.createElement('tr');
-            const colorClass = isWhite ? "white-player" : "black-player";
-
-            row.innerHTML = `
-                <td>${createdAt}</td>
-                <td class="${colorClass}">${isWhite ? "흰색" : "검은색"}</td>
-                <td>${opponent}</td>
-                <td>${myRating}</td>
-                <td>${oppRating}</td>
-                <td class="${resultClass}">${resultText}</td>
-                <td>${openingName}</td>
-                <td title="${game.moves}">${movesPreview}</td>
-                <td>${status}</td>
-                <td class="${analysedClass}">${analysedText}</td>
-                <td><a href="https://lichess.org/${game.id}" target="_blank">보기</a></td>
-            `;
-            gamesBody.appendChild(row);
-        }
-
-        loadMoreBtn.style.display = (maxRowsToShow < allGames.length) ? 'inline-block' : 'none';
-        collapseBtn.style.display = (maxRowsToShow > INITIAL_SHOW_COUNT) ? 'inline-block' : 'none';
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${createdAt}</td>
+        <td class="${colorClass}">${isWhite ? "흰색" : "검은색"}</td>
+        <td>${opponent}</td>
+        <td>${myRating}</td>
+        <td>${oppRating}</td>
+        <td class="${resultClass}">${resultText}</td>
+        <td>${openingName}</td>
+        <td title="${game.moves}">${movesPreview}</td>
+        <td>${status}</td>
+        <td class="${analysedClass}">${analysedText}</td>
+        <td><a href="https://lichess.org/${game.id}" target="_blank">보기</a></td>
+      `;
+      gamesBody.appendChild(row);
     }
 
-    function drawOpeningChart(games) {
-        const openingCountMap = {};
-        games.forEach(game => {
-            const fullName = game.opening?.name || "알 수 없음";
-            // 콜론(:) 기준 앞부분만 사용
-            const openingName = fullName.includes(':') ? fullName.split(':')[0].trim() : fullName;
-            openingCountMap[openingName] = (openingCountMap[openingName] || 0) + 1;
-        });
+    loadMoreBtn.style.display = (maxRowsToShow < allGames.length) ? 'inline-block' : 'none';
+    collapseBtn.style.display = (maxRowsToShow > INITIAL_SHOW_COUNT) ? 'inline-block' : 'none';
+  }
 
-        const sortedOpenings = Object.entries(openingCountMap)
-            .sort((a,b) => b[1] - a[1])
-            .slice(0, 10);
-
-        const labels = sortedOpenings.map(e => e[0]);
-        const data = sortedOpenings.map(e => e[1]);
-
-        if (openingChartInstance) {
-            openingChartInstance.destroy();
-        }
-
-        openingChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: '오프닝 사용 횟수',
-                    data: data,
-                    backgroundColor: 'rgba(0, 123, 255, 0.7)'
-                }]
-            },
-            options: {
-                scales: {
-                    y: { beginAtZero: true }
-                },
-                responsive: true,
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-    }
-
-    async function fetchGames() {
-        let url = `/api/games/${username}?max_games=${maxGamesSelect.value}`;
-
-        if (endTypeSelect.value && endTypeSelect.value !== 'all') {
-            url += `&endType=${encodeURIComponent(endTypeSelect.value)}`;
-        }
-        if (timeFilterSelect.value && timeFilterSelect.value !== 'all') {
-            url += `&days=${encodeURIComponent(timeFilterSelect.value)}`;
-        }
-
-        try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error("게임 데이터를 불러오는데 실패했습니다.");
-            const data = await res.json();
-            allGames = data;
-            maxRowsToShow = INITIAL_SHOW_COUNT;
-            renderGames();
-            drawOpeningChart(allGames);  // 차트도 같이 갱신
-        } catch (err) {
-            gamesBody.innerHTML = `<tr><td colspan="11" style="color:red;">${err.message}</td></tr>`;
-            loadMoreBtn.style.display = 'none';
-            collapseBtn.style.display = 'none';
-            if (openingChartInstance) {
-                openingChartInstance.destroy();
-            }
-        }
-    }
-
-    loadMoreBtn.addEventListener('click', () => {
-        maxRowsToShow = Math.min(maxRowsToShow + 10, allGames.length);
-        renderGames();
+  function drawOpeningChart(games) {
+    const openingCountMap = {};
+    games.forEach(game => {
+      const fullName = game.opening?.name || "알 수 없음";
+      const openingName = fullName.includes(':') ? fullName.split(':')[0].trim() : fullName;
+      openingCountMap[openingName] = (openingCountMap[openingName] || 0) + 1;
     });
 
-    collapseBtn.addEventListener('click', () => {
-        maxRowsToShow = INITIAL_SHOW_COUNT;
-        renderGames();
-    });
+    const sortedOpenings = Object.entries(openingCountMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const labels = sortedOpenings.map(e => e[0]);
+    const data = sortedOpenings.map(e => e[1]);
 
-    [endTypeSelect, timeFilterSelect, maxGamesSelect].forEach(el => {
-        el.addEventListener('change', fetchGames);
+    if (openingChartInstance) openingChartInstance.destroy();
+    openingChartInstance = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{ label: '오프닝 사용 횟수', data: data, backgroundColor: 'rgba(0, 123, 255, 0.7)' }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+      }
     });
+  }
 
-    fetchGames();
+  async function fetchGames() {
+    let url = `/api/games/${username}?max_games=${maxGamesSelect.value}`;
+    if (endTypeSelect.value !== 'all') url += `&endType=${encodeURIComponent(endTypeSelect.value)}`;
+    if (timeFilterSelect.value !== 'all') url += `&days=${encodeURIComponent(timeFilterSelect.value)}`;
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("게임 데이터를 불러오는데 실패했습니다.");
+      allGames = await res.json();
+      maxRowsToShow = INITIAL_SHOW_COUNT;
+      renderGames();
+      drawOpeningChart(allGames);
+    } catch (err) {
+      gamesBody.innerHTML = `<tr><td colspan="11" style="color:red;">${err.message}</td></tr>`;
+      if (openingChartInstance) openingChartInstance.destroy();
+      loadMoreBtn.style.display = 'none';
+      collapseBtn.style.display = 'none';
+    }
+  }
+
+  loadMoreBtn.addEventListener('click', () => {
+    maxRowsToShow = Math.min(maxRowsToShow + 10, allGames.length);
+    renderGames();
+  });
+  collapseBtn.addEventListener('click', () => {
+    maxRowsToShow = INITIAL_SHOW_COUNT;
+    renderGames();
+  });
+
+  [endTypeSelect, timeFilterSelect, maxGamesSelect].forEach(el => el.addEventListener('change', fetchGames));
+  fetchGames();
 });
 </script>
 </body>
