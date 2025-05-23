@@ -6,6 +6,12 @@
     <meta charset="UTF-8" />
     <title>{{ user.username }}님의 프로필 및 전적</title>
     <style>
+                .chart-canvas {
+            width: 700px !important;  /* 원하는 너비 */
+            height: 350px !important; /* 원하는 높이 */
+            max-width: 100%;          /* 반응형 유지 */
+        }
+
         table {border-collapse: collapse; width: 100%; max-width: 900px;}
         th, td {border: 1px solid #ddd; padding: 8px; text-align: center;}
         th {background-color: #007bff; color: white;}
@@ -140,8 +146,8 @@
                 <li>{{ opening }} - {{ count }}회</li>
             {% endfor %}
         </ul>
+    <canvas id="openingChart" class="chart-canvas"></canvas>
 
-        <canvas id="openingChart" width="200" height="150"></canvas>
     </div>
     <div class="section">
         <h2>최근 게임 (최대 {{ max_games }}개)</h2>
@@ -289,8 +295,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function drawOpeningChart(games) {
         const openingCountMap = {};
         games.forEach(game => {
-            const name = game.opening?.name || "알 수 없음";
-            openingCountMap[name] = (openingCountMap[name] || 0) + 1;
+            const fullName = game.opening?.name || "알 수 없음";
+            // 콜론(:) 기준 앞부분만 사용
+            const openingName = fullName.includes(':') ? fullName.split(':')[0].trim() : fullName;
+            openingCountMap[openingName] = (openingCountMap[openingName] || 0) + 1;
         });
 
         const sortedOpenings = Object.entries(openingCountMap)
