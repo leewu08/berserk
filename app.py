@@ -7,7 +7,7 @@ import time
 app = Flask(__name__)
 CORS(app)  # CORS 활성화
 
-TOKEN = "lip_gF4TfbXijclL9xmlktO1"
+TOKEN = "lip_xkIjbSGxqiQAOD8i2f7a"
 
 def timestamp_to_date(timestamp):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp / 1000))

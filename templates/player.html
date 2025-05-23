@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <meta charset="UTF-8" />
     <title>{{ user.username }}님의 프로필 및 전적</title>
     <style>
@@ -131,7 +133,16 @@
             </tbody>
         </table>
     </div>
+    <div>
+        <h3>📘 가장 많이 사용한 오프닝</h3>
+        <ul>
+            {% for opening, count in most_common_openings %}
+                <li>{{ opening }} - {{ count }}회</li>
+            {% endfor %}
+        </ul>
 
+        <canvas id="openingChart" width="200" height="150"></canvas>
+    </div>
     <div class="section">
         <h2>최근 게임 (최대 {{ max_games }}개)</h2>
 
@@ -189,7 +200,7 @@
         <button id="loadMoreBtn">더 보기</button>
         <button id="collapseBtn" style="display:none;">접기</button>
     </div>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const username = "{{ user.username }}";
@@ -199,10 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const gamesBody = document.getElementById('gamesBody');
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     const collapseBtn = document.getElementById('collapseBtn');
+    const ctx = document.getElementById('openingChart').getContext('2d');
 
     const INITIAL_SHOW_COUNT = 10;
     let maxRowsToShow = INITIAL_SHOW_COUNT;
     let allGames = [];
+    let openingChartInstance = null;
 
     function timestampToDate(ts) {
         const d = new Date(ts);
@@ -269,9 +282,48 @@ document.addEventListener('DOMContentLoaded', () => {
             gamesBody.appendChild(row);
         }
 
-        // 버튼 표시 토글
         loadMoreBtn.style.display = (maxRowsToShow < allGames.length) ? 'inline-block' : 'none';
         collapseBtn.style.display = (maxRowsToShow > INITIAL_SHOW_COUNT) ? 'inline-block' : 'none';
+    }
+
+    function drawOpeningChart(games) {
+        const openingCountMap = {};
+        games.forEach(game => {
+            const name = game.opening?.name || "알 수 없음";
+            openingCountMap[name] = (openingCountMap[name] || 0) + 1;
+        });
+
+        const sortedOpenings = Object.entries(openingCountMap)
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 10);
+
+        const labels = sortedOpenings.map(e => e[0]);
+        const data = sortedOpenings.map(e => e[1]);
+
+        if (openingChartInstance) {
+            openingChartInstance.destroy();
+        }
+
+        openingChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '오프닝 사용 횟수',
+                    data: data,
+                    backgroundColor: 'rgba(0, 123, 255, 0.7)'
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true }
+                },
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
     }
 
     async function fetchGames() {
@@ -291,10 +343,14 @@ document.addEventListener('DOMContentLoaded', () => {
             allGames = data;
             maxRowsToShow = INITIAL_SHOW_COUNT;
             renderGames();
+            drawOpeningChart(allGames);  // 차트도 같이 갱신
         } catch (err) {
             gamesBody.innerHTML = `<tr><td colspan="11" style="color:red;">${err.message}</td></tr>`;
             loadMoreBtn.style.display = 'none';
             collapseBtn.style.display = 'none';
+            if (openingChartInstance) {
+                openingChartInstance.destroy();
+            }
         }
     }
 
@@ -315,6 +371,5 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchGames();
 });
 </script>
-
 </body>
 </html>
