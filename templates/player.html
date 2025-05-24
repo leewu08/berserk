@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>{{ user.username }}님의 프로필</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -23,140 +24,181 @@
 </head>
 <body>
 <div class="page">
-  <div class="container-xl">
-    <h2 class="page-title mt-4">{{ user.username }}님의 프로필</h2>
-
-    <div class="card my-4">
-      <div class="card-body">
-        <p><strong>가입일:</strong> {{ user.createdAt | timestamp_to_date }}</p>
-        <p><strong>최근 접속:</strong> {{ user.seenAt | timestamp_to_date }}</p>
-        <p><strong>프로필 링크:</strong> <a href="{{ user.url }}" target="_blank">{{ user.url }}</a></p>
-      </div>
+  <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">체스 대시보드</a>
     </div>
+  </aside>
 
-    <div class="card my-4">
-      <div class="card-header"><h3 class="card-title">전적</h3></div>
-      <div class="table-responsive">
+  <header class="navbar navbar-expand-md d-print-none">
+    <div class="container-xl">
+      <div class="navbar-nav flex-row order-md-last">
+        <span class="nav-item">{{ user.username }}</span>
+      </div>
+      <div class="navbar-brand">Lichess 분석</div>
+    </div>
+  </header>
+
+  <div class="page-wrapper">
+    <div class="container-xl py-4">
+      <h2 class="page-title mb-4">{{ user.username }}님의 프로필</h2>
+
+      <div class="row row-cards">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">기본 정보</h3></div>
+            <div class="card-body">
+              <p><strong>가입일:</strong> {{ user.createdAt | timestamp_to_date }}</p>
+              <p><strong>최근 접속:</strong> {{ user.seenAt | timestamp_to_date }}</p>
+              <p><strong>프로필 링크:</strong> <a href="{{ user.url }}" target="_blank">{{ user.url }}</a></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header"><h3 class="card-title">전적 요약</h3></div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-vcenter">
+                  <thead><tr><th>전체</th><th>랭크</th><th>승</th><th>패</th><th>무</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ user.count.all }}</td>
+                      <td>{{ user.count.rated }}</td>
+                      <td>{{ user.count.win }}</td>
+                      <td>{{ user.count.loss }}</td>
+                      <td>{{ user.count.draw }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="mt-2">
+                <strong>승률:</strong> 
+                {% set effective_games = user.count.all - user.count.draw %}
+                {% if effective_games > 0 %}
+                  {{ ((user.count.win / effective_games) * 100) | round(2) }}%
+                {% else %}
+                  0%
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><h3 class="card-title">게임별 레이팅</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-vcenter">
+              <thead><tr><th>게임 종류</th><th>게임 수</th><th>레이팅</th><th>RD</th><th>변화량</th></tr></thead>
+              <tbody>
+                {% for mode, data in sorted_perfs %}
+                  <tr>
+                    <td>{{ mode }}</td>
+                    <td>{{ data.games }}</td>
+                    <td>{{ data.rating }}</td>
+                    <td>{% if data.rd != 500 %}{{ data.rd }}{% endif %}</td>
+                    <td>{{ data.prog }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <div class="card-header"><h3 class="card-title">📘 가장 많이 사용한 오프닝</h3></div>
+        <div class="card-body">
+          <canvas id="openingChart" class="chart-canvas"></canvas>
+        </div>
+      </div>
+        <!-- 오프닝 라인별 전적 분석 카드 -->
+    <div class="card mt-4" id="openingLineCard" style="display:none;">
+    <div class="card-header">
+        <h3 class="card-title">📝 선택한 오프닝 라인 전적 분석</h3>
+    </div>
+    <div class="card-body">
+        <p id="selectedOpeningName" style="font-weight: bold; font-size: 1.1rem;">선택된 오프닝: -</p>
         <table class="table table-striped">
-          <thead><tr>
-            <th>전체 게임 수</th><th>랭크 게임</th><th>승리</th><th>패배</th><th>무승부</th>
-          </tr></thead>
-          <tbody>
+        <thead>
             <tr>
-              <td>{{ user.count.all }}</td>
-              <td>{{ user.count.rated }}</td>
-              <td>{{ user.count.win }}</td>
-              <td>{{ user.count.loss }}</td>
-              <td>{{ user.count.draw }}</td>
+            <th>라인 이름</th>
+            <th>게임 수</th>
+            <th>승률</th>
+            <th>무승부율</th>
+            <th>패배율</th>
             </tr>
-          </tbody>
+        </thead>
+        <tbody id="openingLineStatsBody">
+            <!-- JS에서 라인별 통계 데이터 렌더링 -->
+        </tbody>
         </table>
-      </div>
-      <div class="card-body">
-        {% set effective_games = user.count.all - user.count.draw %}
-        {% if effective_games > 0 %}
-          {% set win_rate = (user.count.win / effective_games) * 100 %}
-        {% else %}
-          {% set win_rate = 0 %}
-        {% endif %}
-        <p><strong>승률:</strong> {{ win_rate | round(2) }}%</p>
-      </div>
     </div>
-
-    <div class="card my-4">
-      <div class="card-header"><h3 class="card-title">게임별 레이팅</h3></div>
-      <div class="table-responsive">
-        <table class="table">
-          <thead><tr>
-            <th>게임 종류</th><th>게임 수</th><th>레이팅</th><th>RD</th><th>변화량</th>
-          </tr></thead>
-          <tbody>
-            {% for mode, data in sorted_perfs %}
-              <tr>
-                <td>{{ mode }}</td>
-                <td>{{ data.games }}</td>
-                <td>{{ data.rating }}</td>
-                <td>{% if data.rd != 500 %}{{ data.rd }}{% endif %}</td>
-                <td>{{ data.prog }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
     </div>
+      
+      <div class="card mt-4">
+        <div class="card-header"><h3 class="card-title">최근 게임 (최대 {{ max_games }}개)</h3></div>
+        <div class="card-body">
+          <form class="row g-2 mb-3">
+            <div class="col-md-4">
+              <label class="form-label">기간</label>
+              <select class="form-select" id="timeFilterSelect">
+                <option value="all">전체</option>
+                <option value="7">1주</option>
+                <option value="30">1개월</option>
+                <option value="90">3개월</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">게임 수</label>
+              <select class="form-select" id="maxGamesSelect">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">종료 방식</label>
+              <select class="form-select" id="endTypeSelect">
+                <option value="all">전체</option>
+                <option value="mate">체크메이트</option>
+                <option value="resign">기권</option>
+                <option value="timeout">시간초과</option>
+                <option value="draw">무승부</option>
+                <option value="outoftime">시간초과 (오프라인)</option>
+              </select>
+            </div>
+          </form>
 
-    <div class="card my-4">
-      <div class="card-header"><h3 class="card-title">📘 가장 많이 사용한 오프닝</h3></div>
-      <div class="card-body">
-        <ul>
-          {% for opening, count in most_common_openings %}
-            <li>{{ opening }} - {{ count }}회</li>
-          {% endfor %}
-        </ul>
-        <canvas id="openingChart" class="chart-canvas"></canvas>
-      </div>
-    </div>
-
-    <div class="card my-4">
-      <div class="card-header"><h3 class="card-title">최근 게임 (최대 {{ max_games }}개)</h3></div>
-      <div class="card-body">
-        <div class="row g-2 mb-3">
-          <div class="col-md-4">
-            <label class="form-label">기간 필터</label>
-            <select class="form-select" id="timeFilterSelect">
-              <option value="all">전체</option>
-              <option value="7">최근 1주</option>
-              <option value="30">최근 1개월</option>
-              <option value="90">최근 3개월</option>
-            </select>
+          <div class="table-responsive">
+            <table class="table table-vcenter" id="gamesTable">
+              <thead>
+                <tr>
+                  <th>날짜</th><th>색상</th><th>상대</th><th>내 레이팅</th><th>상대 레이팅</th>
+                  <th>결과</th><th>오프닝</th><th>수 순</th><th>종료</th><th>분석</th><th>링크</th>
+                </tr>
+              </thead>
+              <tbody id="gamesBody">
+                <!-- JavaScript에서 렌더링 -->
+              </tbody>
+            </table>
           </div>
-          <div class="col-md-4">
-            <label class="form-label">게임 수</label>
-            <select class="form-select" id="maxGamesSelect">
-              <option value="10">10개</option>
-              <option value="20">20개</option>
-              <option value="50" selected>50개</option>
-              <option value="100">100개</option>
-              <option value="200">200개</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">종료 방식</label>
-            <select class="form-select" id="endTypeSelect">
-              <option value="all">전체</option>
-              <option value="mate">체크메이트</option>
-              <option value="resign">기권</option>
-              <option value="timeout">시간초과</option>
-              <option value="draw">무승부</option>
-              <option value="outoftime">시간초과 (오프라인)</option>
-            </select>
+
+          <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" id="loadMoreBtn">더 보기</button>
+            <button class="btn btn-secondary" id="collapseBtn" style="display:none;">접기</button>
           </div>
         </div>
-
-        <div class="table-responsive">
-          <table class="table" id="gamesTable">
-            <thead>
-              <tr>
-                <th>날짜</th><th>색상</th><th>상대</th><th>내 레이팅</th><th>상대 레이팅</th>
-                <th>결과</th><th>오프닝</th><th>수 순</th><th>종료 방식</th><th>분석</th><th>링크</th>
-              </tr>
-            </thead>
-            <tbody id="gamesBody">
-              <!-- JavaScript로 삽입 -->
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mt-3">
-          <button class="btn btn-primary" id="loadMoreBtn">더 보기</button>
-          <button class="btn btn-secondary" id="collapseBtn" style="display:none;">접기</button>
-        </div>
       </div>
-    </div>
 
+    </div>
   </div>
 </div>
-
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const username = "{{ user.username }}";
