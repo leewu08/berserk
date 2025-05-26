@@ -7,6 +7,26 @@
   <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+
+      .bar-container {
+        width: 100%;
+        background-color: #eee;
+        border-radius: 6px;
+        overflow: hidden;
+        height: 10px;
+        margin-top: 4px;
+      }
+      .bar-fill {
+        height: 100%;
+        transition: width 0.4s ease;
+      }
+      .bar-fill.green {
+        background-color: #28a745;
+      }
+      .bar-fill.gray {
+        background-color: #6c757d;
+      }
+
     .chart-canvas {
       width: 100%;
       max-width: 700px;
@@ -20,11 +40,192 @@
     .result-win { background-color: #d4edda; color: #155724; font-weight: bold; }
     .result-lose { background-color: #f8d7da; color: #721c24; font-weight: bold; }
     .result-draw { background-color: #f0f0f0; color: #555; }
+    
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      font-family: 'Gowun Dodum', sans-serif;
+      background: linear-gradient(135deg, #ffe6f0, #e6f7ff);
+      color: #444;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ff6fb7;
+      font-size: 32px;
+      margin-bottom: 40px;
+    }
+    .sidebar {
+      width: 220px;
+      background-color: #fff0f6;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      border-right: 2px dashed #ffcce6;
+    }
+
+    .sidebar h2 {
+      font-size: 22px;
+      color: #ff6fb7;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .menu-item {
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 8px rgba(255, 182, 193, 0.2);
+      color: #ff69b4;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .menu-item:hover {
+      background-color: #ffe0f0;
+    }
+
+    /* 오른쪽 콘텐츠 영역 */
+    .main-content {
+      flex-grow: 1;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      animation: fadeIn 0.8s ease;
+    }
+
+    .card h3 {
+      color: #ff6fb7;
+      margin-bottom: 8px;
+    }
+
+    .card .emoji {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* 여기에 추가해 주세요 (style 태그 안 또는 CSS 파일) */
+    .navbar-custom {
+  background: linear-gradient(to right, #ffe0f0, #ffe9f9); /* 💖 부드러운 핑크 */
+  padding: 16px 30px;
+  box-shadow: 0 4px 12px rgba(255, 105, 180, 0.15);
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+.navbar-custom {
+  width: 100%;
+  background: linear-gradient(to right, #ffe0f0, #e6f0ff);
+  padding: 16px 30px;
+  box-shadow: 0 4px 12px rgba(255, 105, 180, 0.15);
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar-brand {
+  font-family: 'Gowun Dodum', sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff6fb7;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.navbar-brand:hover {
+  color: #ff3399;
+}
+
+
+    /* 스크롤바 숨김 (선택) */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ffd6ec;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      transition: transform 0.3s ease;
+      animation: fadeInUp 0.8s ease forwards;
+    }
+
+    .card:hover {
+      transform: translateY(-8px);
+    }
+
+    .card h2 {
+      font-size: 20px;
+      color: #ff6fb7;
+      margin-bottom: 12px;
+    }
+
+    .card p {
+      font-size: 18px;
+      color: #555;
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .emoji {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+  
   </style>
 </head>
 <body>
 <div class="page">
-  <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark bg-primary">
+  <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">체스 대시보드</a>
     </div>
@@ -115,45 +316,49 @@
           <canvas id="openingChart" class="chart-canvas"></canvas>
         </div>
       </div>
-        <!-- 오프닝 라인별 전적 분석 카드 -->
+
+      
+      <select id="openingSelect">
+        
+    <!-- JS로 옵션 추가 예정 -->
+      </select>
     <div class="card mt-4" id="openingLineCard" style="display:none;">
     <div class="card-header">
         <h3 class="card-title">📝 선택한 오프닝 라인 전적 분석</h3>
+
     </div>
-    <div class="card-body">
+    <div class="card-body"> 
         <p id="selectedOpeningName" style="font-weight: bold; font-size: 1.1rem;">선택된 오프닝: -</p>
-        <table class="table table-striped">
+      <table id="openingTable" class="table table-striped">
         <thead>
-            <tr>
+          <tr>
             <th>라인 이름</th>
             <th>게임 수</th>
             <th>승률</th>
-            <th>무승부율</th>
-            <th>패배율</th>
-            </tr>
+          </tr>
         </thead>
         <tbody id="openingLineStatsBody">
-            <!-- JS에서 라인별 통계 데이터 렌더링 -->
+          <!-- JS에서 라인별 통계 데이터 렌더링 -->
         </tbody>
-        </table>
+      </table>
     </div>
     </div>
       
       <div class="card mt-4">
-        <div class="card-header"><h3 class="card-title">최근 게임 (최대 {{ max_games }}개)</h3></div>
+        <div class="card-header"><h3 class="card-title">최근 게임 (설정값따라 위 그래프가  바뀌어요)</h3></div>
         <div class="card-body">
           <form class="row g-2 mb-3">
             <div class="col-md-4">
-              <label class="form-label">기간</label>
-              <select class="form-select" id="timeFilterSelect">
+              <label for="colorSelect" class="form-label">플레이어 색상</label>
+              <select class="form-select" id="colorSelect">
                 <option value="all">전체</option>
-                <option value="7">1주</option>
-                <option value="30">1개월</option>
-                <option value="90">3개월</option>
+                <option value="white">흰색</option>
+                <option value="black">검은색</option>
               </select>
             </div>
+
             <div class="col-md-4">
-              <label class="form-label">게임 수</label>
+              <label for="maxGamesSelect" class="form-label">게임 수</label>
               <select class="form-select" id="maxGamesSelect">
                 <option value="10">10</option>
                 <option value="20">20</option>
@@ -162,8 +367,9 @@
                 <option value="200">200</option>
               </select>
             </div>
+
             <div class="col-md-4">
-              <label class="form-label">종료 방식</label>
+              <label for="endTypeSelect" class="form-label">종료 방식</label>
               <select class="form-select" id="endTypeSelect">
                 <option value="all">전체</option>
                 <option value="mate">체크메이트</option>
@@ -174,6 +380,7 @@
               </select>
             </div>
           </form>
+
 
           <div class="table-responsive">
             <table class="table table-vcenter" id="gamesTable">
@@ -199,16 +406,54 @@
     </div>
   </div>
 </div>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const username = "{{ user.username }}";
   const endTypeSelect = document.getElementById('endTypeSelect');
-  const timeFilterSelect = document.getElementById('timeFilterSelect');
+  const colorSelect = document.getElementById('colorSelect');
   const maxGamesSelect = document.getElementById('maxGamesSelect');
   const gamesBody = document.getElementById('gamesBody');
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   const collapseBtn = document.getElementById('collapseBtn');
+  const openingSelect = document.getElementById('openingSelect');
+  const openingLineCard = document.getElementById('openingLineCard');
+  const selectedOpeningName = document.getElementById('selectedOpeningName');
+  const openingLineStatsBody = document.getElementById('openingLineStatsBody');
   const ctx = document.getElementById('openingChart').getContext('2d');
+
+  function sortTableByColumn(index, asc = true) {
+    const tbody = document.getElementById('openingLineStatsBody');
+    const rowsArray = Array.from(tbody.querySelectorAll('tr'));
+
+    rowsArray.sort((a, b) => {
+      let aText = a.children[index].textContent.trim();
+      let bText = b.children[index].textContent.trim();
+
+      if (index !== 0) {
+        aText = parseFloat(aText.replace('%', '')) || 0;
+        bText = parseFloat(bText.replace('%', '')) || 0;
+      } else {
+        aText = aText.toLowerCase();
+        bText = bText.toLowerCase();
+      }
+
+      return asc ? aText - bText : bText - aText;
+    });
+
+    tbody.innerHTML = '';
+    rowsArray.forEach(row => tbody.appendChild(row));
+  }
+
+  document.querySelectorAll('#openingTable thead th').forEach((header, index) => {
+    header.style.cursor = 'pointer';
+    let asc = true;
+
+    header.addEventListener('click', () => {
+      sortTableByColumn(index, asc);
+      asc = !asc;
+    });
+  });
 
   const INITIAL_SHOW_COUNT = 10;
   let maxRowsToShow = INITIAL_SHOW_COUNT;
@@ -219,61 +464,78 @@ document.addEventListener('DOMContentLoaded', () => {
     return new Date(ts).toLocaleString();
   }
 
-  function renderGames() {
-    gamesBody.innerHTML = '';
-    const gamesToShow = allGames.slice(0, maxRowsToShow);
 
-    if (gamesToShow.length === 0) {
-      gamesBody.innerHTML = '<tr><td colspan="11">조건에 맞는 게임이 없습니다.</td></tr>';
-      loadMoreBtn.style.display = 'none';
-      collapseBtn.style.display = 'none';
-      return;
-    }
+function renderGames() {
+  gamesBody.innerHTML = '';
+  const gamesToShow = allGames.slice(0, maxRowsToShow);
 
-    for (const game of gamesToShow) {
-      const isWhite = (game.players.white.user.name.toLowerCase() === username.toLowerCase());
-      const opponent = isWhite ? game.players.black.user.name : game.players.white.user.name;
-      const myRating = isWhite ? game.players.white.rating : game.players.black.rating;
-      const oppRating = isWhite ? game.players.black.rating : game.players.white.rating;
-
-      const winner = game.winner;
-      let resultText = "무승부", resultClass = "result-draw";
-      if (winner) {
-        if ((winner === "white" && isWhite) || (winner === "black" && !isWhite)) {
-          resultText = "승리"; resultClass = "result-win";
-        } else {
-          resultText = "패배"; resultClass = "result-lose";
-        }
-      }
-
-      const openingName = game.opening?.name || "알 수 없음";
-      const movesPreview = game.moves?.substring(0, 50) + (game.moves?.length > 50 ? "..." : "") || "";
-      const status = game.status || "";
-      const analysedText = game.is_analysed ? "분석됨" : "미분석";
-      const analysedClass = game.is_analysed ? "analysed" : "not-analysed";
-      const createdAt = timestampToDate(game.createdAt);
-      const colorClass = isWhite ? "white-player" : "black-player";
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${createdAt}</td>
-        <td class="${colorClass}">${isWhite ? "흰색" : "검은색"}</td>
-        <td>${opponent}</td>
-        <td>${myRating}</td>
-        <td>${oppRating}</td>
-        <td class="${resultClass}">${resultText}</td>
-        <td>${openingName}</td>
-        <td title="${game.moves}">${movesPreview}</td>
-        <td>${status}</td>
-        <td class="${analysedClass}">${analysedText}</td>
-        <td><a href="https://lichess.org/${game.id}" target="_blank">보기</a></td>
-      `;
-      gamesBody.appendChild(row);
-    }
-
-    loadMoreBtn.style.display = (maxRowsToShow < allGames.length) ? 'inline-block' : 'none';
-    collapseBtn.style.display = (maxRowsToShow > INITIAL_SHOW_COUNT) ? 'inline-block' : 'none';
+  if (gamesToShow.length === 0) {
+    gamesBody.innerHTML = '<tr><td colspan="11">조건에 맞는 게임이 없습니다.</td></tr>';
+    loadMoreBtn.style.display = 'none';
+    collapseBtn.style.display = 'none';
+    return;
   }
+
+  for (const game of gamesToShow) {
+    const whiteUser = game.players?.white?.user?.name;
+    const blackUser = game.players?.black?.user?.name;
+
+    if (!whiteUser && !blackUser) {
+      // 둘 다 없으면 데이터가 불완전하니 스킵
+      continue;
+    }
+
+    const isWhite = whiteUser?.toLowerCase() === username.toLowerCase();
+    const opponent = isWhite
+      ? blackUser || "알 수 없음"
+      : whiteUser || "알 수 없음";
+
+    const myRating = isWhite
+      ? game.players?.white?.rating || "-"
+      : game.players?.black?.rating || "-";
+
+    const oppRating = isWhite
+      ? game.players?.black?.rating || "-"
+      : game.players?.white?.rating || "-";
+
+    const winner = game.winner;
+    let resultText = "무승부", resultClass = "result-draw";
+    if (winner) {
+      if ((winner === "white" && isWhite) || (winner === "black" && !isWhite)) {
+        resultText = "승리"; resultClass = "result-win";
+      } else {
+        resultText = "패배"; resultClass = "result-lose";
+      }
+    }
+
+    const openingName = game.opening?.name || "알 수 없음";
+    const movesPreview = game.moves?.substring(0, 50) + (game.moves?.length > 50 ? "..." : "") || "";
+    const status = game.status || "";
+    const analysedText = game.is_analysed ? "분석됨" : "미분석";
+    const analysedClass = game.is_analysed ? "analysed" : "not-analysed";
+    const createdAt = timestampToDate(game.createdAt);
+    const colorClass = isWhite ? "white-player" : "black-player";
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${createdAt}</td>
+      <td class="${colorClass}">${isWhite ? "흰색" : "검은색"}</td>
+      <td>${opponent}</td>
+      <td>${myRating}</td>
+      <td>${oppRating}</td>
+      <td class="${resultClass}">${resultText}</td>
+      <td>${openingName}</td>
+      <td title="${game.moves}">${movesPreview}</td>
+      <td>${status}</td>
+      <td class="${analysedClass}">${analysedText}</td>
+      <td><a href="https://lichess.org/${game.id}" target="_blank">보기</a></td>
+    `;
+    gamesBody.appendChild(row);
+  }
+
+  loadMoreBtn.style.display = (maxRowsToShow < allGames.length) ? 'inline-block' : 'none';
+  collapseBtn.style.display = (maxRowsToShow > INITIAL_SHOW_COUNT) ? 'inline-block' : 'none';
+}
 
   function drawOpeningChart(games) {
     const openingCountMap = {};
@@ -286,6 +548,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const sortedOpenings = Object.entries(openingCountMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
     const labels = sortedOpenings.map(e => e[0]);
     const data = sortedOpenings.map(e => e[1]);
+
+    openingSelect.innerHTML = '<option value="">-- 오프닝 선택 --</option>';
+    sortedOpenings.forEach(([name]) => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      openingSelect.appendChild(opt);
+    });
 
     if (openingChartInstance) openingChartInstance.destroy();
     openingChartInstance = new Chart(ctx, {
@@ -301,11 +571,82 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+    function showOpeningLineStats(openingName) {
+    if (!openingName) {
+      openingLineCard.style.display = 'none';
+      return;
+    }
+
+    selectedOpeningName.textContent = `${openingName}`;
+
+    // opening.name이 없어도 처리할 수 있도록 안전하게 필터링
+    const filteredLines = allGames.filter(game => {
+      const fullName = game.opening?.name || "알 수 없음";
+      return fullName.startsWith(openingName);
+    });
+
+    if (filteredLines.length === 0) {
+      openingLineStatsBody.innerHTML = `<tr><td colspan="3">해당 오프닝 라인의 게임이 없습니다.</td></tr>`;
+      openingLineCard.style.display = 'block';
+      return;
+    }
+
+    const lineStatsMap = {};
+
+    filteredLines.forEach(game => {
+      const lineName = game.opening?.name || "알 수 없음";
+
+      if (!lineStatsMap[lineName]) {
+        lineStatsMap[lineName] = { games: 0, win: 0, draw: 0, loss: 0 };
+      }
+
+      lineStatsMap[lineName].games++;
+
+      const isWhite = game.players?.white?.user?.name?.toLowerCase() === username.toLowerCase();
+      const winner = game.winner;
+
+      if (!winner) {
+        lineStatsMap[lineName].draw++;
+      } else if ((winner === 'white' && isWhite) || (winner === 'black' && !isWhite)) {
+        lineStatsMap[lineName].win++;
+      } else {
+        lineStatsMap[lineName].loss++;
+      }
+    });
+
+    const sortedLineStats = Object.entries(lineStatsMap).sort((a, b) => b[1].games - a[1].games);
+
+    openingLineStatsBody.innerHTML = '';
+  for (const [lineName, stats] of sortedLineStats) {
+    const winRate = (stats.win / stats.games * 100).toFixed(2);
+    const gamesBarWidth = Math.min(stats.games * 10, 100); // 예: 10게임이면 100%
+    const winBarWidth = Math.min(winRate, 100);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${lineName}</td>
+      <td>
+        ${stats.games}
+        <div class="bar-container">
+          <div class="bar-fill gray" style="width:${gamesBarWidth}%"></div>
+        </div>
+      </td>
+      <td>
+        ${winRate}%
+        <div class="bar-container">
+          <div class="bar-fill green" style="width:${winBarWidth}%"></div>
+        </div>
+      </td>
+    `;
+    openingLineStatsBody.appendChild(tr);
+  }
+      openingLineCard.style.display = 'block';
+  }
 
   async function fetchGames() {
     let url = `/api/games/${username}?max_games=${maxGamesSelect.value}`;
     if (endTypeSelect.value !== 'all') url += `&endType=${encodeURIComponent(endTypeSelect.value)}`;
-    if (timeFilterSelect.value !== 'all') url += `&days=${encodeURIComponent(timeFilterSelect.value)}`;
+    if (colorSelect.value !== 'all') url += `&color=${encodeURIComponent(colorSelect.value)}`;
 
     try {
       const res = await fetch(url);
@@ -314,11 +655,15 @@ document.addEventListener('DOMContentLoaded', () => {
       maxRowsToShow = INITIAL_SHOW_COUNT;
       renderGames();
       drawOpeningChart(allGames);
+      openingLineCard.style.display = 'none';
+      openingSelect.value = "";
     } catch (err) {
       gamesBody.innerHTML = `<tr><td colspan="11" style="color:red;">${err.message}</td></tr>`;
       if (openingChartInstance) openingChartInstance.destroy();
       loadMoreBtn.style.display = 'none';
       collapseBtn.style.display = 'none';
+      openingLineCard.style.display = 'none';
+      openingSelect.innerHTML = '';
     }
   }
 
@@ -326,14 +671,30 @@ document.addEventListener('DOMContentLoaded', () => {
     maxRowsToShow = Math.min(maxRowsToShow + 10, allGames.length);
     renderGames();
   });
+
   collapseBtn.addEventListener('click', () => {
     maxRowsToShow = INITIAL_SHOW_COUNT;
     renderGames();
   });
 
-  [endTypeSelect, timeFilterSelect, maxGamesSelect].forEach(el => el.addEventListener('change', fetchGames));
+  [endTypeSelect, colorSelect, maxGamesSelect].forEach(el =>
+    el.addEventListener('change', () => {
+      fetchGames().then(() => {
+        if (openingSelect.value) {
+          showOpeningLineStats(openingSelect.value);
+        }
+      });
+    })
+  );
+
+  openingSelect.addEventListener('change', () => {
+    showOpeningLineStats(openingSelect.value);
+  });
+
   fetchGames();
 });
+
 </script>
+
 </body>
 </html>

@@ -1,12 +1,87 @@
-<form method="post" action="/player">
-  <label>사용자 이름: <input type="text" name="username" required></label>
-  <label>최근 게임 수:
-    <select name="max_games">
-      <option value="5">5</option>
-      <option value="10">10</option>
-      <option value="20" selected>20</option>
-      <option value="50">50</option>
-    </select>
-  </label>
-  <button type="submit">조회</button>
-</form>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>🌟 Lichess 전적 조회 🌟</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Gowun Dodum', sans-serif;
+      background: linear-gradient(135deg, #ffe6f0, #e6f7ff);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .search-box {
+      background: white;
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      animation: pop-in 0.8s ease-out;
+    }
+
+    @keyframes pop-in {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .search-box h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+      color: #ff6fb7;
+    }
+
+    .search-box input[type="text"] {
+      padding: 14px 20px;
+      border: 2px solid #ffd6ec;
+      border-radius: 12px;
+      font-size: 16px;
+      width: 250px;
+      outline: none;
+      transition: 0.3s ease;
+    }
+
+    .search-box input[type="text"]:focus {
+      border-color: #ffb3d9;
+      box-shadow: 0 0 8px #ffd6ec;
+    }
+
+    .search-box button {
+      margin-top: 16px;
+      background: #ff99cc;
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 20px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .search-box button:hover {
+      background: #ff6fb7;
+    }
+
+    .emoji {
+      font-size: 24px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-box">
+    <h1>🌸 Lichess 전적을 확인해볼까요? 🌸</h1>
+    <form method="post" action="/player">
+      <input type="text" name="username" placeholder="Lichess 아이디를 입력하세요" required>
+      <br>
+      <button type="submit">✨ 조회하기 ✨</button>
+      <div class="emoji">🕊️♟️💗</div>
+    </form>
+  </div>
+</body>
+</html>

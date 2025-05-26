@@ -1,13 +1,11 @@
 from flask import Flask, request, render_template, jsonify
-from flask_cors import CORS
 import requests
 import json
 import time
 
 app = Flask(__name__)
-CORS(app)  # CORS 활성화
 
-TOKEN = "lip_xkIjbSGxqiQAOD8i2f7a"
+TOKEN = "lip_jdtYXFicH6O5yaA5FUnc"
 
 def timestamp_to_date(timestamp):
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(timestamp / 1000))
@@ -68,7 +66,7 @@ def fetch_analysis_paginated(username, max_games=20, since=None, until=None):
             break
 
         # 중복 방지용으로 1 밀리초 빼기
-        current_until = oldest_game_time - 1
+        current_until = oldest_game_time - 1    
 
         # 요청한 수보다 적게 오면 더 이상 데이터 없음
         if len(games) < fetch_count:
@@ -84,16 +82,19 @@ def index():
 def player():
     username = request.form.get("username")
     max_games = int(request.form.get("max_games", 20))
+    selected_color = request.form.get("color", "white").lower()  # 기본 흰색
 
     if not username:
         return "사용자명을 입력해주세요."
 
+    # 사용자 정보 가져오기
     user_url = f"https://lichess.org/api/user/{username}"
     user_resp = requests.get(user_url, headers={"Authorization": f"Bearer {TOKEN}"})
     if user_resp.status_code != 200:
         return f"사용자 '{username}' 정보를 불러올 수 없습니다."
     user = user_resp.json()
 
+    # 퍼포먼스 정렬 (게임 수 기준)
     perfs = user.get("perfs", {})
     sorted_perfs = sorted(
         [(mode, data) for mode, data in perfs.items() if data.get("games", 0) > 0],
@@ -106,9 +107,10 @@ def player():
     except Exception as e:
         return f"게임 데이터를 불러오는 중 오류가 발생했습니다: {str(e)}"
 
+    uname = username.lower()
     wins = 0
     total = 0
-    uname = username.lower()
+
     for game in games:
         total += 1
         winner = game.get("winner")
@@ -118,8 +120,22 @@ def player():
         black = game["players"].get("black", {}).get("user", {}).get("name", "").lower()
         if (winner == "white" and white == uname) or (winner == "black" and black == uname):
             wins += 1
-
     win_rate = round((wins / total) * 100, 2) if total else 0
+
+    # 🔸 선택한 색상으로 플레이한 게임 수
+    color_game_count = 0
+    for game in games:
+        player_name = game.get("players", {}).get(selected_color, {}).get("user", {}).get("name", "").lower()
+        if player_name == uname:
+            color_game_count += 1
+
+    # 🔸 전체 색상별 플레이 게임 수 (white/black)
+    color_counts = {"white": 0, "black": 0}
+    for game in games:
+        for color in ["white", "black"]:
+            player = game.get("players", {}).get(color, {}).get("user", {}).get("name", "").lower()
+            if player == uname:
+                color_counts[color] += 1
 
     return render_template(
         "player.html",
@@ -128,25 +144,38 @@ def player():
         win_rate=win_rate,
         total=total,
         max_games=max_games,
-        sorted_perfs=sorted_perfs
+        sorted_perfs=sorted_perfs,
+        selected_color=selected_color,
+        color_game_count=color_game_count,
+        color_counts=color_counts
     )
+
 
 @app.route("/api/games/<username>")
 def api_games(username):
     end_type = request.args.get("endType", "").lower()
+    color = request.args.get("color", "").lower()
     max_games = int(request.args.get("max_games", 20))
-    since = request.args.get("since")  # 밀리초 timestamp 문자열 예상
-    until = request.args.get("until")  # 밀리초 timestamp 문자열 예상
+    since = request.args.get("since")
+    until = request.args.get("until")
+
+    since = int(since) if since else None
+    until = int(until) if until else None
 
     try:
         raw_games = fetch_analysis_paginated(username, max_games=max_games, since=since, until=until)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+    filtered_games = raw_games
+
     if end_type and end_type != "all":
-        filtered_games = [g for g in raw_games if g.get("status", "").lower() == end_type]
-    else:
-        filtered_games = raw_games
+        filtered_games = [g for g in filtered_games if g.get("status", "").lower() == end_type]
+
+    if color in ("white", "black"):
+        uname = username.lower()
+        filtered_games = [g for g in filtered_games if
+                          g.get("players", {}).get(color, {}).get("user", {}).get("name", "").lower() == uname]
 
     filtered_games = filtered_games[:max_games]
 
@@ -165,5 +194,6 @@ def api_games(username):
 
     return jsonify(result)
 
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5002)
+    app.run(host="0.0.0.0",debug=True, port=80)
