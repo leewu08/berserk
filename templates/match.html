@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>상대 전적</title>
+  <link href="https://unpkg.com/@tabler/core@latest/dist/css/tabler.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      background: linear-gradient(135deg, #ffe6f0, #e6f7ff);
+      font-family: 'Gowun Dodum', sans-serif;
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #ff6fb7;
+      margin-bottom: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 18px;
+      border-bottom: 1px solid #eee;
+      text-align: center;
+      cursor: pointer;
+    }
+    th {
+      background-color: #fff0f6;
+      color: #ff69b4;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+    .game-details {
+      margin-top: 30px;
+      background-color: #ffffff;
+      border: 1px solid #ffcce6;
+      padding: 20px;
+      border-radius: 12px;
+      display: none;
+    }
+    .game-details h3 {
+      color: #ff6fb7;
+    }
+    .opponent-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔁 2회 이상 대국한 상대 전적</h1>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>상대</th>
+          <th>총 대국 수</th>
+          <th>승</th>
+          <th>무</th>
+          <th>패</th>
+        </tr>
+      </thead>
+      <tbody id="matchTableBody">
+        <!-- JS로 전적 데이터 삽입 -->
+      </tbody>
+    </table>
+  </div>
+
+  <div class="game-details" id="gameDetails">
+    <h3>📋 상세 경기 정보</h3>
+    <div class="opponent-title" id="selectedOpponent"></div>
+    <table style="width: 100%; margin-top: 10px;">
+      <thead>
+        <tr>
+          <th>날짜</th>
+          <th>색상</th>
+          <th>상대</th>
+          <th>내 레이팅</th>
+          <th>상대 레이팅</th>
+          <th>결과</th>
+          <th>오프닝</th>
+          <th>수 순</th>
+          <th>종료</th>
+          <th>분석</th>
+          <th>링크</th>
+        </tr>
+      </thead>
+      <tbody id="gameList"></tbody>
+    </table>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const matchRes = await fetch('/api/matches');
+        if (!matchRes.ok) throw new Error('전적 데이터를 불러올 수 없습니다.');
+        const matchData = await matchRes.json();
+
+        const gameRes = await fetch(`/api/games/${matchData.username}?max_games=200`);
+        if (!gameRes.ok) throw new Error('전체 게임 데이터를 불러올 수 없습니다.');
+        const allGames = await gameRes.json();
+
+        const tbody = document.getElementById('matchTableBody');
+
+        Object.entries(matchData.stats).forEach(([opponent, stats]) => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${opponent}</td>
+            <td>${stats.games}</td>
+            <td>${stats.wins}</td>
+            <td>${stats.draws}</td>
+            <td>${stats.losses}</td>`;
+
+          row.addEventListener('click', () => {
+            document.getElementById('selectedOpponent').textContent = `상대: ${opponent}`;
+            const gameList = document.getElementById('gameList');
+            const gameDetails = document.getElementById('gameDetails');
+            gameList.innerHTML = '';
+
+            const filtered = allGames.filter(game => {
+              const white = game.players?.white?.user?.name?.toLowerCase();
+              const black = game.players?.black?.user?.name?.toLowerCase();
+              return white === opponent.toLowerCase() || black === opponent.toLowerCase();
+            });
+
+            filtered.forEach(g => {
+              const isWhite = g.players.white.user.name.toLowerCase() === matchData.username.toLowerCase();
+              const opponentName = isWhite ? g.players.black.user.name : g.players.white.user.name;
+              const myRating = isWhite ? g.players.white.rating : g.players.black.rating;
+              const oppRating = isWhite ? g.players.black.rating : g.players.white.rating;
+              const result = g.winner ?
+                ((g.winner === 'white' && isWhite) || (g.winner === 'black' && !isWhite) ? '승리' : '패배')
+                : '무승부';
+              const opening = g.opening?.name || '-';
+              const moves = g.moves?.split(' ').length || '-';
+              const status = g.status || '-';
+              const analysed = g.is_analysed ? 'O' : 'X';
+
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${new Date(g.createdAt).toLocaleString()}</td>
+                <td>${isWhite ? '흰색' : '검은색'}</td>
+                <td>${opponentName}</td>
+                <td>${myRating}</td>
+                <td>${oppRating}</td>
+                <td>${result}</td>
+                <td>${opening}</td>
+                <td>${moves}</td>
+                <td>${status}</td>
+                <td>${analysed}</td>
+                <td><a href="https://lichess.org/${g.id}" target="_blank">보기</a></td>`;
+              gameList.appendChild(row);
+            });
+
+            gameDetails.style.display = 'block';
+          });
+
+          tbody.appendChild(row);
+        });
+
+        if (Object.keys(matchData.stats).length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">2회 이상 대국한 상대가 없습니다.</td></tr>';
+        }
+      } catch (error) {
+        document.getElementById('matchTableBody').innerHTML = `<tr><td colspan="5" style="color:red;">${error.message}</td></tr>`;
+      }
+    });
+  </script>
+</body>
+</html>

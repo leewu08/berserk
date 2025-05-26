@@ -1,10 +1,11 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, session,redirect
 import requests
 import json
 import time
+from collections import defaultdict
 
 app = Flask(__name__)
-
+app.secret_key = 'dev-secret-key'
 TOKEN = "lip_jdtYXFicH6O5yaA5FUnc"
 
 def timestamp_to_date(timestamp):
@@ -76,11 +77,15 @@ def fetch_analysis_paginated(username, max_games=20, since=None, until=None):
 
 @app.route("/")
 def index():
+    
+    username = request.form.get("username")
+    session["username"] = username  # 세션 등록
     return render_template("index.html")
 
 @app.route("/player", methods=["POST"])
 def player():
     username = request.form.get("username")
+    session['username'] = username
     max_games = int(request.form.get("max_games", 20))
     selected_color = request.form.get("color", "white").lower()  # 기본 흰색
 
@@ -194,6 +199,54 @@ def api_games(username):
 
     return jsonify(result)
 
+@app.route("/match")
+def match():
+    username = session.get("username")
+    if not username:
+        return redirect("/")
+
+    return render_template("match.html", username=username)  # 🔹 템플릿에 전달
+
+@app.route("/api/matches")
+def api_matches():
+    username = session.get("username")
+    if not username:
+        return jsonify({"error": "세션 없음"}), 403
+
+    url = f"https://lichess.org/api/games/user/{username}"
+    headers = {"Accept": "application/x-ndjson"}
+    params = {"max": 200, "opening": "false"}
+
+    try:
+        resp = requests.get(url, headers=headers, params=params)
+        games = [json.loads(line) for line in resp.text.strip().split("\n")]
+    except Exception as e:
+        return jsonify({"error": f"Lichess API 실패: {str(e)}"}), 500
+
+    stats = defaultdict(lambda: {"games": 0, "wins": 0, "draws": 0, "losses": 0})
+
+    for game in games:
+        try:
+            white = game["players"]["white"]["user"]["name"]
+            black = game["players"]["black"]["user"]["name"]
+        except KeyError:
+            continue  # 이름 없는 게임 스킵
+
+        winner = game.get("winner")
+        is_white = username.lower() == white.lower()
+        opponent = black if is_white else white
+
+        stats[opponent]["games"] += 1
+        if winner is None:
+            stats[opponent]["draws"] += 1
+        elif (winner == "white" and is_white) or (winner == "black" and not is_white):
+            stats[opponent]["wins"] += 1
+        else:
+            stats[opponent]["losses"] += 1
+
+    # 2회 이상만 필터링
+    filtered = {op: stat for op, stat in stats.items() if stat["games"] >= 2}
+    return jsonify({"username": username, "stats": filtered})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0",debug=True, port=80)
